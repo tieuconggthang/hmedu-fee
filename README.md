@@ -1,146 +1,128 @@
 # HMEDU Fee Collection Service
 
-Ứng dụng Java tự động thu học phí - Tích hợp VietQR + Zalo API
+Hệ thống tự động thu học phí tích hợp Excel + VietQR + Zalo
 
-## Tính năng
+## 🎯 Chức năng
 
-- 📊 **Đọc Excel** - Danh sách học sinh và học phí
-- 💳 **Tạo VietQR** - Mã QR chuyển tiền tự động  
-- 💬 **Gửi Zalo** - Thông báo + QR đến phụ huynh
-- 🗄️ **Lưu Database** - Theo dõi trạng thái thanh toán
-- ⏰ **Chạy định kỳ** - Tự động chạy theo lịch cấu hình
+- 📊 Đọc danh sách học sinh từ file Excel
+- 💳 Tạo mã QR VietQR cho từng học sinh
+- 📱 Gửi thông báo + QR qua Zalo
+- 🗄️ Lưu trạng thái vào database (H2)
+- ⏰ Chạy định kỳ theo cron
 
-## Yêu cầu
+## 🚀 Hướng dẫn chạy
 
-- Java 17+
-- Maven 3.8+
-- File Excel danh sách học sinh
-- Zalo API Service đang chạy (Docker)
-
-## Cài đặt & Chạy
-
-### 1. Build
+### Bước 1: Chuẩn bị
 
 ```bash
-build.bat
+# 1. Tạo thư mục data
+mkdir -p data
+
+# 2. Copy file Excel vào
+# Cột A: Tên HS, Cột D: SĐT, Cột R: Số tiền
+# Cột G: Nội dung, Cột V: Tên TK, Cột W: Số TK, Cột X: Ngân hàng
+cp "Theo dõi học phí tháng 4.xlsx" data/fee.xlsx
 ```
 
-Hoặc:
+### Bước 2: Đảm bảo Zalo API đang chạy
 
 ```bash
-mvn clean package -DskipTests
+# Kiểm tra Zalo API
+curl http://10.10.33.99:10000/health
+
+# Nếu chưa chạy, khởi động Zalo API trước:
+cd /path/to/zalo-api-service
+docker-compose up -d
 ```
 
-### 2. Chuẩn bị dữ liệu
-
-```
-data/
-  └── Theo dõi học phí tháng 4.xlsx   <-- Copy file Excel vào đây
-```
-
-**Cấu trúc Excel:**
-- Cột A (0): Tên học sinh
-- Cột B (1): Số điện thoại (Zalo)
-- Cột R (17): Số tiền học phí
-- Cột G (6): Nội dung chuyển tiền
-- Cột V (21): Tên tài khoản
-- Cột W (22): Số tài khoản
-- Cột X (23): Ngân hàng
-
-### 3. Chạy ứng dụng
+### Bước 3: Build và chạy
 
 ```bash
-run.bat
+# Cách 1: Dùng script
+chmod +x run.sh
+./run.sh
+
+# Cách 2: Chạy thủ công
+docker-compose build
+docker-compose up -d
 ```
 
-Hoặc:
+### Bước 4: Theo dõi logs
 
 ```bash
-java -jar target/fee-collection-service-1.0.0.jar
+# Xem logs real-time
+docker-compose logs -f fee-collection
+
+# Xem logs file
+tail -f logs/fee-collection.log
 ```
 
-## Cấu hình
+## ⚙️ Cấu hình
 
-### application.yml
+Chỉnh sửa `docker-compose.yml`:
 
 ```yaml
-hmedu:
-  fee-collection:
-    excel:
-      file-path: ./data/Theo dõi học phí tháng 4.xlsx
-      columns:
-        student-name: 0
-        phone: 1
-        amount: 17      # Cột R
-        content: 6      # Cột G
-        account-name: 21   # Cột V
-        account-number: 22 # Cột W
-        bank: 23           # Cột X
-    
-    vietqr:
-      enabled: true
-      default-bank-id: 970407  # Techcombank
-    
-    zalo:
-      enabled: true
-      api-url: http://10.10.33.99:10000
-    
-    scheduler:
-      cron: "0 0 8 1 * ?"  # 8h sáng ngày 1 hàng tháng
-      # Test: "0 * * * * ?"  # Mỗi phút (test)
+environment:
+  - FEE_EXCEL_PATH=/app/data/fee.xlsx    # Đường dẫn file Excel
+  - ZALO_API_URL=http://10.10.33.99:10000 # URL Zalo API
+  - FEE_CRON=0 0 8 1 * ?                 # Cron schedule
 ```
 
-### Lịch chạy (Cron)
+## 📁 Cấu trúc thư mục
 
-- `0 0 8 1 * ?` - 8h sáng ngày 1 hàng tháng
-- `0 0 9 * * MON` - 9h sáng mỗi thứ 2
-- `0 */6 * * * ?` - Mỗi 6 giờ
+```
+hmedu-fee-service/
+├── Dockerfile              # Build Java app
+├── docker-compose.yml      # Orchestration
+├── run.sh                  # Script chạy
+├── pom.xml                 # Maven config
+├── src/                    # Source code
+├── data/                   # File Excel + Database
+│   └── fee.xlsx
+└── logs/                   # Log files
+    └── fee-collection.log
+```
 
-## Database
+## 🔧 Lệnh hữu ích
 
-H2 database file: `data/fee-collection-db.mv.db`
+```bash
+# Dừng service
+docker-compose down
 
-**Bảng fee_collection_records:**
-- id: Mã giao dịch
-- student_name: Tên học sinh
-- phone_number: SĐT
-- amount: Số tiền
-- content: Nội dung CK
-- bank_name: Ngân hàng
-- qr_code_url: Link QR
-- zalo_message_sent: Đã gửi Zalo?
-- payment_status: PENDING/PAID/NOTIFIED
-- month_year: Tháng/Năm
+# Restart
+docker-compose restart
 
-## Log
+# Xem database
+ls -la data/fee-collection-db.mv.db
 
-File log: `logs/fee-collection.log`
+# Build lại
+docker-compose build --no-cache
+```
 
-## Kiểm tra
+## 📱 Nội dung tin nhắn Zalo
 
-1. **Zalo API running?**
-   ```bash
-   curl http://10.10.33.99:10000/login/status
-   ```
+```
+🎓 THU HỌC PHÍ THÁNG 04/2025
 
-2. **Excel đúng định dạng?**
-   - Kiểm tra cột theo cấu hình
-   - Số tiền là số (không có dấu phẩy)
+Kính gửi phụ huynh học sinh [TÊN],
 
-3. **Xem log chạy:**
-   ```bash
-   tail -f logs/fee-collection.log
-   ```
+• Học phí: [SỐ TIỀN] VNĐ
+• Nội dung CK: [NỘI DUNG] MTC[MÃ]
+• Mã tham chiếu: MTC[MÃ SỐ]
 
-## Troubleshooting
+Quét mã QR để thanh toán.
+```
 
-| Lỗi | Nguyên nhân | Cách fix |
-|-----|-------------|----------|
-| Không tìm thấy Excel | Sai đường dẫn | Kiểm tra `hmedu.fee-collection.excel.file-path` |
-| Không gửi được Zalo | Zalo API chưa login | Vào `http://IP:10000/login/qr/web` để login |
-| QR sai | Sai mã ngân hàng | Kiểm tra `bank` trong Excel |
+## 🐛 Troubleshooting
 
-## Liên kết
+### Lỗi "Cannot find file fee.xlsx"
+- Kiểm tra file có trong thư mục `data/`
+- Đảm bảo tên file đúng: `fee.xlsx`
 
-- Zalo API Service: https://github.com/tieuconggthang/zalo-auto
-- VietQR: https://vietqr.io
+### Lỗi kết nối Zalo API
+- Kiểm tra Zalo API đang chạy: `curl http://10.10.33.99:10000/health`
+- Đảm bảo mạng giữa các container thông nhau
+
+### Lỗi gửi Zalo
+- Kiểm tra đã login Zalo chưa: `curl http://10.10.33.99:10000/login/status`
+- Nếu chưa login, mở browser: `http://10.10.33.99:10000/login/qr/web`

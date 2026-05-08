@@ -76,6 +76,9 @@ public class FeeCollectionRecord {
     @Column(name = "month_year")
     private String monthYear;
     
+    @Column(name = "transaction_id", unique = true, length = 200)
+    private String transactionId;  // Mã định danh giao dịch (từ cột G - nội dung CK)
+    
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

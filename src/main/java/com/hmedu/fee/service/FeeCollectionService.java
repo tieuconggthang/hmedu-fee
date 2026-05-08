@@ -119,14 +119,69 @@ public class FeeCollectionService {
     }
 
     /**
-     * Tạo VietQR URL
+     * Loại bỏ dấu tiếng Việt, chuyển về không dấu
+     * VD: "Học phí tháng 4" -> "Hoc phi thang 4"
+     */
+    private String removeVietnameseAccents(String text) {
+        if (text == null || text.isEmpty()) {
+            return "";
+        }
+        
+        String result = text;
+        // Chuyển đổi ký tự có dấu sang không dấu
+        result = result.replaceAll("[àáạảãâầấậẩẫăằắặẳẵ]", "a");
+        result = result.replaceAll("[ÀÁẠẢÃÂẦẤẨẪĂẰẮẶẲẴ]", "A");
+        result = result.replaceAll("[èéẹẻẽêềếệểễ]", "e");
+        result = result.replaceAll("[ÈÉẸẺẼÊỀẾỆỂỄ]", "E");
+        result = result.replaceAll("[ìíịỉĩ]", "i");
+        result = result.replaceAll("[ÌÍỊỈĨ]", "I");
+        result = result.replaceAll("[òóọỏõôồốộổỗơờớợởỡ]", "o");
+        result = result.replaceAll("[ÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠ]", "O");
+        result = result.replaceAll("[ùúụủũưừứựửữ]", "u");
+        result = result.replaceAll("[ÙÚỤỦŨƯỪỨỰỬỮ]", "U");
+        result = result.replaceAll("[ỳýỵỷỹ]", "y");
+        result = result.replaceAll("[ỲÝỴỶỸ]", "Y");
+        result = result.replaceAll("[đ]", "d");
+        result = result.replaceAll("[Đ]", "D");
+        
+        return result;
+    }
+
+    /**
+     * Tạo nội dung chuyển khoản kết hợp: nội dung gốc (không dấu) + mã giao dịch
+     * VD: "BuiKhanhAn0396935585 Hoc phi thang4 MTC2505080004"
+     */
+    private String buildTransferContent(StudentFeeDto student) {
+        String originalContent = removeVietnameseAccents(student.getContent());  // Bỏ dấu
+        String transactionId = "MTC" + student.getTransactionId();  // Thêm MTC vào mã
+        
+        // Kết hợp: nội dung gốc + mã giao dịch
+        String combined = originalContent + " " + transactionId;
+        
+        // Giới hạn 25 ký tự (VietQR), nếu quá dài thì cắt nội dung gốc
+        if (combined.length() > 25) {
+            int maxOriginalLength = 25 - transactionId.length() - 1; // -1 cho dấu cách
+            if (maxOriginalLength > 0) {
+                String shortContent = originalContent.substring(0, Math.min(originalContent.length(), maxOriginalLength));
+                combined = shortContent + " " + transactionId;
+            } else {
+                combined = transactionId; // Chỉ gửi mã nếu không đủ chỗ
+            }
+        }
+        
+        return combined.trim();
+    }
+
+    /**
+     * Tạo VietQR URL - Nội dung kết hợp nội dung gốc + mã giao dịch
      */
     private String generateVietQR(StudentFeeDto student) {
         String bankId = vietQRService.getBankId(student.getBank());
         String accountNumber = student.getAccountNumber();
         String accountName = student.getAccountName();
         BigDecimal amount = student.getAmount();
-        String content = student.getContent();
+        // Nội dung CK trong QR: kết hợp nội dung gốc + mã giao dịch
+        String transferContent = buildTransferContent(student);
 
         // Nếu thiếu thông tin, dùng default
         if (accountNumber == null || accountNumber.isEmpty()) {
@@ -136,7 +191,7 @@ public class FeeCollectionService {
         }
 
         return vietQRService.generateDynamicQRUrl(
-            bankId, accountNumber, accountName, amount, content
+            bankId, accountNumber, accountName, amount, transferContent  // Nội dung kết hợp
         );
     }
 
@@ -145,14 +200,18 @@ public class FeeCollectionService {
      */
     private String buildCaption(StudentFeeDto student, String monthYear) {
         return String.format(
+            "🎓 THU HỌC PHÍ THÁNG %s\n\n" +
             "Kính gửi phụ huynh học sinh %s,\n\n" +
-            "Học phí tháng %s: %s VNĐ\n" +
-            "Nội dung: %s\n\n" +
-            "Quét mã QR để thanh toán. Xin cảm ơn!\nHMEDU",
-            student.getStudentName(),
+            "• Học phí: %s VNĐ\n" +
+            "• Nội dung CK: %s\n" +
+            "• Mã tham chiếu: MTC%s\n\n" +
+            "Vui lòng ghi đúng nội dung CK khi thanh toán.\n\n" +
+            "Quét mã QR để thanh toán nhanh chóng.\nXin cảm ơn!\nHMEDU",
             monthYear,
+            student.getStudentName(),
             formatCurrency(student.getAmount()),
-            student.getContent()
+            removeVietnameseAccents(student.getContent()) + " MTC" + student.getTransactionId(),  // Nội dung không dấu + MTC
+            student.getTransactionId()  // Mã số
         );
     }
     
@@ -210,6 +269,7 @@ public class FeeCollectionService {
             .qrCodeUrl(student.getQrCodeUrl())
             .paymentStatus(FeeCollectionRecord.PaymentStatus.PENDING)
             .monthYear(monthYear)
+            .transactionId(student.getTransactionId())  // Lưu mã định danh giao dịch
             .build();
 
         return repository.save(record);

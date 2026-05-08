@@ -24,4 +24,11 @@ public interface FeeCollectionRepository extends JpaRepository<FeeCollectionReco
     
     @Query("SELECT f FROM FeeCollectionRecord f WHERE f.paymentStatus = 'PAID' AND f.paymentConfirmedAt IS NULL")
     List<FeeCollectionRecord> findPaidButNotConfirmed();
+    
+    // Tìm theo mã giao dịch (để match với thông báo từ ngân hàng)
+    Optional<FeeCollectionRecord> findByTransactionId(String transactionId);
+    
+    // Tìm theo nội dung chuyển khoản (nếu ngân hàng trả về nội dung khác transactionId)
+    @Query("SELECT f FROM FeeCollectionRecord f WHERE f.content LIKE %:keyword% OR f.transactionId LIKE %:keyword%")
+    List<FeeCollectionRecord> findByContentOrTransactionIdContaining(String keyword);
 }

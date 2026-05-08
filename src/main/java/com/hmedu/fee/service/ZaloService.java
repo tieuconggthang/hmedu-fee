@@ -97,91 +97,44 @@ public class ZaloService {
     }
     
     /**
-     * Gửi ảnh kèm caption qua Zalo
-     * Sử dụng OpenZCA CLI: msg image <threadId> -u <url> -m <caption>
+     * Gửi ảnh kèm caption qua Zalo API
+     * Sử dụng HTTP POST /send-image (query params)
      */
     public boolean sendImage(String phone, String imageUrl, String caption) {
         try {
-            // 1. Tìm user ID từ phone
-            String userId = findUserIdByPhone(phone);
-            if (userId == null) {
-                log.error("User not found for phone: {}", phone);
-                return false;
-            }
+            log.info("Sending image to phone: {}", phone);
             
-            log.info("Sending image to userId: {} - Phone: {}", userId, phone);
+            // Encode caption để truyền qua URL
+            String encodedCaption = java.net.URLEncoder.encode(caption, java.nio.charset.StandardCharsets.UTF_8);
             
-            // 2. Dùng OpenZCA CLI để gửi ảnh
-            ProcessBuilder pb = new ProcessBuilder(
-                "openzca", "msg", "image", userId,
-                "-u", imageUrl,
-                "-m", caption
+            // Gọi API /send-image với query params
+            String url = String.format("%s/send-image?phone=%s&image_url=%s&caption=%s",
+                config.getApiUrl(),
+                phone,
+                java.net.URLEncoder.encode(imageUrl, java.nio.charset.StandardCharsets.UTF_8),
+                encodedCaption
             );
             
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
+            WebClient webClient = webClientBuilder.build();
             
-            // Đọc output
-            java.io.BufferedReader reader = new java.io.BufferedReader(
-                new java.io.InputStreamReader(process.getInputStream())
-            );
-            String line;
-            StringBuilder output = new StringBuilder();
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
-            }
+            var response = webClient.post()
+                .uri(url)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block();
             
-            int exitCode = process.waitFor();
-            
-            if (exitCode == 0) {
+            if (response != null && Boolean.TRUE.equals(response.get("success"))) {
                 log.info("Image sent successfully to: {}", phone);
                 return true;
             } else {
-                log.error("Failed to send image: {}", output);
+                String error = response != null ? (String) response.get("message") : "Unknown error";
+                log.error("Failed to send image: {}", error);
                 return false;
             }
             
         } catch (Exception e) {
             log.error("Error sending image to {}", phone, e);
             return false;
-        }
-    }
-    
-    /**
-     * Tìm user ID từ phone number qua API /friends
-     */
-    private String findUserIdByPhone(String phone) {
-        try {
-            String url = config.getApiUrl() + "/friends";
-            WebClient webClient = webClientBuilder.build();
-            
-            var response = webClient.get()
-                .uri(url)
-                .retrieve()
-                .bodyToMono(java.util.Map.class)
-                .block();
-            
-            if (response != null && response.get("friends") != null) {
-                java.util.List<java.util.Map<String, Object>> friends = 
-                    (java.util.List<java.util.Map<String, Object>>) response.get("friends");
-                
-                String phoneClean = phone.replace("+", "");
-                
-                for (java.util.Map<String, Object> friend : friends) {
-                    String friendPhone = String.valueOf(friend.get("phoneNumber") == null ? "" : friend.get("phoneNumber"));
-                    String friendId = String.valueOf(friend.get("id"));
-                    
-                    if (friendPhone.contains(phoneClean)) {
-                        log.debug("Found userId {} for phone {}", friendId, phone);
-                        return friendId;
-                    }
-                }
-            }
-            return null;
-            
-        } catch (Exception e) {
-            log.error("Error finding user by phone: {}", phone, e);
-            return null;
         }
     }
 }

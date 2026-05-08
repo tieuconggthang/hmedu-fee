@@ -30,14 +30,14 @@ public class ExcelProcessingService {
         String sheetName = config.getExcel().getSheetName();
         int skipRows = config.getExcel().getSkipRows();
         
-        // Column indices (0-based)
-        int colName = config.getExcel().getColumns().getOrDefault("student-name", 0);
-        int colPhone = config.getExcel().getColumns().getOrDefault("phone", 1);
-        int colAmount = config.getExcel().getColumns().getOrDefault("amount", 17); // R
-        int colContent = config.getExcel().getColumns().getOrDefault("content", 6); // G
-        int colAccountName = config.getExcel().getColumns().getOrDefault("account-name", 21); // V
+        // Column indices (0-based) - Cột D (index 3) là số điện thoại người nhận
+        int colName = config.getExcel().getColumns().getOrDefault("student-name", 0);      // A
+        int colPhone = config.getExcel().getColumns().getOrDefault("phone", 3);            // D (thay vì B)
+        int colAmount = config.getExcel().getColumns().getOrDefault("amount", 17);         // R
+        int colContent = config.getExcel().getColumns().getOrDefault("content", 6);        // G
+        int colAccountName = config.getExcel().getColumns().getOrDefault("account-name", 21);  // V
         int colAccountNumber = config.getExcel().getColumns().getOrDefault("account-number", 22); // W
-        int colBank = config.getExcel().getColumns().getOrDefault("bank", 23); // X
+        int colBank = config.getExcel().getColumns().getOrDefault("bank", 23);             // X
         
         try (FileInputStream fis = new FileInputStream(filePath);
              Workbook workbook = new XSSFWorkbook(fis)) {
@@ -61,12 +61,20 @@ public class ExcelProcessingService {
                     continue;
                 }
                 
+                // Xử lý số điện thoại: nếu bắt đầu bằng 0 thì thay bằng 84
+                String phone = getCellValue(row.getCell(colPhone));
+                phone = normalizePhoneNumber(phone);
+                
+                // Tạo mã giao dịch số duy nhất (dạng số, tránh trùng tên)
+                String transactionId = generateNumericTransactionId(i);
+                
                 StudentFeeDto student = StudentFeeDto.builder()
                     .rowIndex(i)
                     .studentName(getCellValue(row.getCell(colName)))
-                    .phone(getCellValue(row.getCell(colPhone)))
+                    .phone(phone)
                     .amount(getBigDecimalValue(row.getCell(colAmount)))
                     .content(getCellValue(row.getCell(colContent)))
+                    .transactionId(transactionId)  // Mã số duy nhất
                     .accountName(getCellValue(row.getCell(colAccountName)))
                     .accountNumber(getCellValue(row.getCell(colAccountNumber)))
                     .bank(getCellValue(row.getCell(colBank)))
@@ -126,5 +134,47 @@ public class ExcelProcessingService {
             log.warn("Could not parse amount from cell: {}", cell);
             return BigDecimal.ZERO;
         }
+    }
+    
+    /**
+     * Chuẩn hóa số điện thoại: nếu bắt đầu bằng 0 thì thay bằng 84
+     * Ví dụ: 0396935585 -> 84396935585
+     */
+    private String normalizePhoneNumber(String phone) {
+        if (phone == null || phone.trim().isEmpty()) {
+            return "";
+        }
+        
+        // Xóa khoảng trắng, dấu +, và các ký tự không phải số
+        phone = phone.trim().replaceAll("[^\\d]", "");
+        
+        // Nếu bắt đầu bằng 0, thay bằng 84
+        if (phone.startsWith("0")) {
+            phone = "84" + phone.substring(1);
+            log.debug("Normalized phone number: {}", phone);
+        }
+        
+        return phone;
+    }
+    
+    /**
+     * Tạo mã giao dịch số duy nhất (chỉ số, tránh trùng tên)
+     * Format: YYMMDD + 4 số rowIndex (vd: 2505080042)
+     * Tổng cộng 10 chữ số, dễ nhớp chuyển khoản
+     */
+    private String generateNumericTransactionId(int rowIndex) {
+        // Lấy ngày hiện tại: YYMMDD
+        java.time.LocalDate now = java.time.LocalDate.now();
+        String dateStr = String.format("%02d%02d%02d", 
+            now.getYear() % 100, 
+            now.getMonthValue(), 
+            now.getDayOfMonth());
+        
+        // Tạo mã: YYMMDD + rowIndex (padded to 4 digits) = 10 số
+        // VD: 2505080042 (ngày 08/05/2025, dòng 42)
+        String transactionId = String.format("%s%04d", dateStr, rowIndex);
+        
+        log.debug("Generated transactionId: {} for row {}", transactionId, rowIndex);
+        return transactionId;
     }
 }

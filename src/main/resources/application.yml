@@ -31,7 +31,7 @@ hmedu:
       # Column mappings (0-indexed)
       columns:
         student-name: 0    # A: Tên học sinh
-        phone: 1           # B: Số điện thoại
+        phone: 3           # D: Số điện thoại ngườI nhận (thay vì cột B)
         amount: 17         # R: Số tiền (cột R = 17)
         content: 6         # G: Nội dung chuyển tiền (cột G = 6)
         account-name: 21   # V: Tên tài khoản (cột V = 21)

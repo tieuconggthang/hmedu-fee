@@ -18,4 +18,5 @@ public class StudentFeeDto {
     private String bank;
     private String bankId;
     private String qrCodeUrl;
+    private String transactionId;  // Mã định danh giao dịch (từ cột G - nội dung CK)
 }
