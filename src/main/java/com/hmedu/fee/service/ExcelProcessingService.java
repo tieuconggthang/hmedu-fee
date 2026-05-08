@@ -21,23 +21,26 @@ public class ExcelProcessingService {
     private final AppConfig config;
     
     /**
-     * Đọc danh sách học phí từ file Excel
+     * Đọc danh sách từ file Excel cụ thể
      */
-    public List<StudentFeeDto> readFeeData() {
+    public List<StudentFeeDto> readFeeDataFromFile(String filePath) {
+        return readFeeDataFromFile(filePath, config.getExcel().getSheetName());
+    }
+    
+    /**
+     * Đọc danh sách từ file Excel với sheet cụ thể
+     */
+    public List<StudentFeeDto> readFeeDataFromFile(String filePath, String sheetName) {
         List<StudentFeeDto> students = new ArrayList<>();
         
-        String filePath = config.getExcel().getFilePath();
-        String sheetName = config.getExcel().getSheetName();
         int skipRows = config.getExcel().getSkipRows();
-        
-        // Column indices (0-based) - Cột D (index 3) là số điện thoại người nhận
-        int colName = config.getExcel().getColumns().getOrDefault("student-name", 0);      // A
-        int colPhone = config.getExcel().getColumns().getOrDefault("phone", 3);            // D (thay vì B)
-        int colAmount = config.getExcel().getColumns().getOrDefault("amount", 17);         // R
-        int colContent = config.getExcel().getColumns().getOrDefault("content", 6);        // G
-        int colAccountName = config.getExcel().getColumns().getOrDefault("account-name", 21);  // V
-        int colAccountNumber = config.getExcel().getColumns().getOrDefault("account-number", 22); // W
-        int colBank = config.getExcel().getColumns().getOrDefault("bank", 23);             // X
+        int colName = config.getExcel().getColumns().getOrDefault("student-name", 0);
+        int colPhone = config.getExcel().getColumns().getOrDefault("phone", 3);
+        int colAmount = config.getExcel().getColumns().getOrDefault("amount", 17);
+        int colContent = config.getExcel().getColumns().getOrDefault("content", 6);
+        int colAccountName = config.getExcel().getColumns().getOrDefault("account-name", 21);
+        int colAccountNumber = config.getExcel().getColumns().getOrDefault("account-number", 22);
+        int colBank = config.getExcel().getColumns().getOrDefault("bank", 23);
         
         try (FileInputStream fis = new FileInputStream(filePath);
              Workbook workbook = new XSSFWorkbook(fis)) {
@@ -55,17 +58,16 @@ public class ExcelProcessingService {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
                 
-                // Skip empty rows
                 Cell nameCell = row.getCell(colName);
                 if (nameCell == null || getCellValue(nameCell).trim().isEmpty()) {
                     continue;
                 }
                 
-                // Xử lý số điện thoại: nếu bắt đầu bằng 0 thì thay bằng 84
+                // Xử lý phone
                 String phone = getCellValue(row.getCell(colPhone));
                 phone = normalizePhoneNumber(phone);
                 
-                // Tạo mã giao dịch số duy nhất (dạng số, tránh trùng tên)
+                // Tạo transactionId
                 String transactionId = generateNumericTransactionId(i);
                 
                 StudentFeeDto student = StudentFeeDto.builder()
@@ -74,23 +76,31 @@ public class ExcelProcessingService {
                     .phone(phone)
                     .amount(getBigDecimalValue(row.getCell(colAmount)))
                     .content(getCellValue(row.getCell(colContent)))
-                    .transactionId(transactionId)  // Mã số duy nhất
+                    .transactionId(transactionId)
                     .accountName(getCellValue(row.getCell(colAccountName)))
                     .accountNumber(getCellValue(row.getCell(colAccountNumber)))
                     .bank(getCellValue(row.getCell(colBank)))
                     .build();
                 
                 students.add(student);
-                log.debug("Read student: {}", student.getStudentName());
+                log.debug("Read student: {}, transactionId: {}", 
+                    student.getStudentName(), transactionId);
             }
             
-            log.info("Successfully read {} students from Excel", students.size());
+            log.info("Successfully read {} students from file: {}", students.size(), filePath);
             
         } catch (Exception e) {
             log.error("Error reading Excel file: {}", filePath, e);
         }
         
         return students;
+    }
+    
+    /**
+     * Đọc danh sách từ file Excel mặc định (từ config)
+     */
+    public List<StudentFeeDto> readFeeData() {
+        return readFeeDataFromFile(config.getExcel().getFilePath());
     }
     
     private String getCellValue(Cell cell) {
@@ -102,7 +112,6 @@ public class ExcelProcessingService {
                 if (DateUtil.isCellDateFormatted(cell)) {
                     yield cell.getDateCellValue().toString();
                 }
-                // Format số không có dấu phẩy
                 double val = cell.getNumericCellValue();
                 if (val == Math.floor(val)) {
                     yield String.valueOf((long) val);
@@ -138,17 +147,14 @@ public class ExcelProcessingService {
     
     /**
      * Chuẩn hóa số điện thoại: nếu bắt đầu bằng 0 thì thay bằng 84
-     * Ví dụ: 0396935585 -> 84396935585
      */
     private String normalizePhoneNumber(String phone) {
         if (phone == null || phone.trim().isEmpty()) {
             return "";
         }
         
-        // Xóa khoảng trắng, dấu +, và các ký tự không phải số
         phone = phone.trim().replaceAll("[^\\d]", "");
         
-        // Nếu bắt đầu bằng 0, thay bằng 84
         if (phone.startsWith("0")) {
             phone = "84" + phone.substring(1);
             log.debug("Normalized phone number: {}", phone);
@@ -158,20 +164,16 @@ public class ExcelProcessingService {
     }
     
     /**
-     * Tạo mã giao dịch số duy nhất (chỉ số, tránh trùng tên)
+     * Tạo mã giao dịch số duy nhất
      * Format: YYMMDD + 4 số rowIndex (vd: 2505080042)
-     * Tổng cộng 10 chữ số, dễ nhớp chuyển khoản
      */
-    private String generateNumericTransactionId(int rowIndex) {
-        // Lấy ngày hiện tại: YYMMDD
+    public String generateNumericTransactionId(int rowIndex) {
         java.time.LocalDate now = java.time.LocalDate.now();
         String dateStr = String.format("%02d%02d%02d", 
             now.getYear() % 100, 
             now.getMonthValue(), 
             now.getDayOfMonth());
         
-        // Tạo mã: YYMMDD + rowIndex (padded to 4 digits) = 10 số
-        // VD: 2505080042 (ngày 08/05/2025, dòng 42)
         String transactionId = String.format("%s%04d", dateStr, rowIndex);
         
         log.debug("Generated transactionId: {} for row {}", transactionId, rowIndex);

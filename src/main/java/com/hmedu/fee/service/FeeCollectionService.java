@@ -4,7 +4,9 @@ import com.hmedu.fee.config.AppConfig;
 import com.hmedu.fee.config.VietQRConfig;
 import com.hmedu.fee.config.ZaloConfig;
 import com.hmedu.fee.dto.StudentFeeDto;
+import com.hmedu.fee.entity.ExcelFileStatus;
 import com.hmedu.fee.entity.FeeCollectionRecord;
+import com.hmedu.fee.repository.ExcelFileStatusRepository;
 import com.hmedu.fee.repository.FeeCollectionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,12 +14,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -29,18 +32,19 @@ public class FeeCollectionService {
     private final VietQRService vietQRService;
     private final ZaloService zaloService;
     private final FeeCollectionRepository repository;
+    private final ExcelFileStatusRepository fileStatusRepository;
     private final AppConfig appConfig;
     private final VietQRConfig vietQRConfig;
     private final ZaloConfig zaloConfig;
 
     /**
-     * Chạy định kỳ theo cron schedule
+     * Chạy định kỳ - Quét thư mục và xử lý các file Excel chưa xử lý
      */
     @Scheduled(cron = "${hmedu.fee-collection.scheduler.cron:0 0 8 1 * ?}")
     @Transactional
     public void processMonthlyFeeCollection() {
         log.info("=========================================");
-        log.info("Starting monthly fee collection process");
+        log.info("Starting fee collection process - Scanning directory");
         log.info("=========================================");
 
         // Kiểm tra Zalo API login status
@@ -49,22 +53,125 @@ public class FeeCollectionService {
             return;
         }
 
-        // Đọc danh sách từ Excel
-        List<StudentFeeDto> students = excelService.readFeeData();
-        log.info("Found {} students to process", students.size());
+        // Lấy thư mục data từ config
+        String dataDir = getDataDirectory();
+        log.info("Scanning directory: {}", dataDir);
 
-        // Xử lý từng học sinh
-        for (StudentFeeDto student : students) {
+        // Tìm tất cả file .xlsx trong thư mục
+        File dir = new File(dataDir);
+        File[] excelFiles = dir.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.toLowerCase().endsWith(".xlsx");
+            }
+        });
+
+        if (excelFiles == null || excelFiles.length == 0) {
+            log.warn("No Excel files found in directory: {}", dataDir);
+            return;
+        }
+
+        log.info("Found {} Excel file(s) to process", excelFiles.length);
+
+        // Xử lý từng file
+        for (File excelFile : excelFiles) {
             try {
-                processStudent(student);
+                processExcelFile(excelFile);
             } catch (Exception e) {
-                log.error("Error processing student: {}", student.getStudentName(), e);
+                log.error("Error processing file: {}", excelFile.getName(), e);
             }
         }
 
         log.info("=========================================");
-        log.info("Monthly fee collection process completed");
+        log.info("Fee collection process completed");
         log.info("=========================================");
+    }
+
+    /**
+     * Xử lý một file Excel cụ thể
+     */
+    @Transactional
+    public void processExcelFile(File excelFile) {
+        String fileName = excelFile.getName();
+        log.info("Processing file: {}", fileName);
+
+        // Kiểm tra file đã xử lý chưa
+        Optional<ExcelFileStatus> existingStatus = fileStatusRepository.findByFileName(fileName);
+        
+        if (existingStatus.isPresent()) {
+            ExcelFileStatus status = existingStatus.get();
+            if (status.getStatus() == ExcelFileStatus.FileStatus.COMPLETED) {
+                log.info("File {} already completed. Skipping.", fileName);
+                return;
+            }
+            log.info("File {} was processed partially ({} rows). Resuming...", 
+                fileName, status.getProcessedRows());
+        }
+
+        // Tạo hoặc cập nhật trạng thái file
+        ExcelFileStatus fileStatus = existingStatus.orElse(
+            ExcelFileStatus.builder()
+                .fileName(fileName)
+                .filePath(excelFile.getAbsolutePath())
+                .status(ExcelFileStatus.FileStatus.PROCESSING)
+                .processedRows(0)
+                .build()
+        );
+        fileStatus.setStatus(ExcelFileStatus.FileStatus.PROCESSING);
+        fileStatusRepository.save(fileStatus);
+
+        try {
+            // Đọc danh sách từ file
+            List<StudentFeeDto> students = excelService.readFeeDataFromFile(excelFile.getAbsolutePath());
+            log.info("File {}: Found {} students", fileName, students.size());
+            
+            fileStatus.setTotalRows(students.size());
+            int processedCount = 0;
+
+            // Xử lý từng học sinh
+            for (StudentFeeDto student : students) {
+                try {
+                    // Kiểm tra đã xử lý dòng này chưa (qua transactionId)
+                    if (isStudentProcessed(student.getTransactionId())) {
+                        log.debug("Student {} already processed (transactionId: {})", 
+                            student.getStudentName(), student.getTransactionId());
+                        processedCount++;
+                        continue;
+                    }
+                    
+                    processStudent(student);
+                    processedCount++;
+                    
+                    // Cập nhật tiến độ
+                    fileStatus.setProcessedRows(processedCount);
+                    fileStatusRepository.save(fileStatus);
+                    
+                } catch (Exception e) {
+                    log.error("Error processing student: {} from file {}", 
+                        student.getStudentName(), fileName, e);
+                }
+            }
+
+            // Đánh dấu file đã xử lý xong
+            fileStatus.setStatus(ExcelFileStatus.FileStatus.COMPLETED);
+            fileStatus.setProcessedAt(LocalDateTime.now());
+            fileStatusRepository.save(fileStatus);
+            
+            log.info("File {} processed successfully: {}/{} students", 
+                fileName, processedCount, students.size());
+                
+        } catch (Exception e) {
+            log.error("Error processing file: {}", fileName, e);
+            fileStatus.setStatus(ExcelFileStatus.FileStatus.FAILED);
+            fileStatusRepository.save(fileStatus);
+        }
+    }
+
+    /**
+     * Kiểm tra học sinh đã được xử lý chưa (qua transactionId)
+     */
+    private boolean isStudentProcessed(String transactionId) {
+        return repository.findByTransactionId(transactionId).isPresent();
     }
 
     /**
@@ -74,16 +181,8 @@ public class FeeCollectionService {
     public void processStudent(StudentFeeDto student) {
         String monthYear = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM/yyyy"));
 
-        // Kiểm tra đã xử lý chưa
-        Optional<FeeCollectionRecord> existing = repository
-            .findByPhoneNumberAndMonthYear(student.getPhone(), monthYear);
-
-        if (existing.isPresent()) {
-            log.info("Student {} already processed for {}", student.getStudentName(), monthYear);
-            return;
-        }
-
-        log.info("Processing student: {} - Amount: {}", student.getStudentName(), student.getAmount());
+        log.info("Processing student: {} - Amount: {} - TransactionId: {}", 
+            student.getStudentName(), student.getAmount(), student.getTransactionId());
 
         // 1. Tạo VietQR
         String qrUrl = generateVietQR(student);
@@ -94,7 +193,6 @@ public class FeeCollectionService {
 
         // 3. Gửi Zalo (nếu enabled)
         if (zaloConfig.isEnabled() && student.getPhone() != null && !student.getPhone().isEmpty()) {
-            // Gửi ảnh QR + caption
             String caption = buildCaption(student, monthYear);
             boolean sent = zaloService.sendImage(student.getPhone(), student.getQrCodeUrl(), caption);
             
@@ -104,31 +202,57 @@ public class FeeCollectionService {
                 record.setPaymentStatus(FeeCollectionRecord.PaymentStatus.NOTIFIED);
                 log.info("Zalo message with QR sent to: {}", student.getStudentName());
             } else {
-                // Fallback: gửi text nếu gửi ảnh thất bại
-                log.warn("Failed to send image, trying text message...");
-                String textMessage = buildTextMessage(student, monthYear);
-                sent = zaloService.sendMessage(student.getPhone(), textMessage);
-                if (sent) {
-                    record.setZaloMessageSent(true);
-                    record.setZaloSentAt(LocalDateTime.now());
-                    record.setPaymentStatus(FeeCollectionRecord.PaymentStatus.NOTIFIED);
-                }
+                log.warn("Failed to send Zalo message to: {}", student.getStudentName());
             }
             repository.save(record);
         }
     }
 
     /**
-     * Loại bỏ dấu tiếng Việt, chuyển về không dấu
-     * VD: "Học phí tháng 4" -> "Hoc phi thang 4"
+     * Tạo VietQR URL
      */
-    private String removeVietnameseAccents(String text) {
-        if (text == null || text.isEmpty()) {
-            return "";
+    private String generateVietQR(StudentFeeDto student) {
+        String bankId = vietQRService.getBankId(student.getBank());
+        String accountNumber = student.getAccountNumber();
+        String accountName = student.getAccountName();
+        BigDecimal amount = student.getAmount();
+        String content = buildTransferContent(student);
+
+        if (accountNumber == null || accountNumber.isEmpty()) {
+            accountNumber = vietQRConfig.getDefaultAccount();
+            accountName = vietQRConfig.getDefaultAccountName();
+            bankId = vietQRConfig.getDefaultBankId();
         }
+
+        return vietQRService.generateDynamicQRUrl(
+            bankId, accountNumber, accountName, amount, content
+        );
+    }
+
+    /**
+     * Tạo nội dung chuyển khoản
+     */
+    private String buildTransferContent(StudentFeeDto student) {
+        String originalContent = removeVietnameseAccents(student.getContent());
+        String transactionId = "MTC" + student.getTransactionId();
+        String combined = originalContent + " " + transactionId;
         
+        if (combined.length() > 25) {
+            int maxOriginalLength = 25 - transactionId.length() - 1;
+            if (maxOriginalLength > 0) {
+                String shortContent = originalContent.substring(0, 
+                    Math.min(originalContent.length(), maxOriginalLength));
+                combined = shortContent + " " + transactionId;
+            } else {
+                combined = transactionId;
+            }
+        }
+        return combined.trim();
+    }
+
+    private String removeVietnameseAccents(String text) {
+        if (text == null || text.isEmpty()) return "";
         String result = text;
-        // Chuyển đổi ký tự có dấu sang không dấu
         result = result.replaceAll("[àáạảãâầấậẩẫăằắặẳẵ]", "a");
         result = result.replaceAll("[ÀÁẠẢÃÂẦẤẨẪĂẰẮẶẲẴ]", "A");
         result = result.replaceAll("[èéẹẻẽêềếệểễ]", "e");
@@ -143,61 +267,9 @@ public class FeeCollectionService {
         result = result.replaceAll("[ỲÝỴỶỸ]", "Y");
         result = result.replaceAll("[đ]", "d");
         result = result.replaceAll("[Đ]", "D");
-        
         return result;
     }
 
-    /**
-     * Tạo nội dung chuyển khoản kết hợp: nội dung gốc (không dấu) + mã giao dịch
-     * VD: "BuiKhanhAn0396935585 Hoc phi thang4 MTC2505080004"
-     */
-    private String buildTransferContent(StudentFeeDto student) {
-        String originalContent = removeVietnameseAccents(student.getContent());  // Bỏ dấu
-        String transactionId = "MTC" + student.getTransactionId();  // Thêm MTC vào mã
-        
-        // Kết hợp: nội dung gốc + mã giao dịch
-        String combined = originalContent + " " + transactionId;
-        
-        // Giới hạn 25 ký tự (VietQR), nếu quá dài thì cắt nội dung gốc
-        if (combined.length() > 25) {
-            int maxOriginalLength = 25 - transactionId.length() - 1; // -1 cho dấu cách
-            if (maxOriginalLength > 0) {
-                String shortContent = originalContent.substring(0, Math.min(originalContent.length(), maxOriginalLength));
-                combined = shortContent + " " + transactionId;
-            } else {
-                combined = transactionId; // Chỉ gửi mã nếu không đủ chỗ
-            }
-        }
-        
-        return combined.trim();
-    }
-
-    /**
-     * Tạo VietQR URL - Nội dung kết hợp nội dung gốc + mã giao dịch
-     */
-    private String generateVietQR(StudentFeeDto student) {
-        String bankId = vietQRService.getBankId(student.getBank());
-        String accountNumber = student.getAccountNumber();
-        String accountName = student.getAccountName();
-        BigDecimal amount = student.getAmount();
-        // Nội dung CK trong QR: kết hợp nội dung gốc + mã giao dịch
-        String transferContent = buildTransferContent(student);
-
-        // Nếu thiếu thông tin, dùng default
-        if (accountNumber == null || accountNumber.isEmpty()) {
-            accountNumber = vietQRConfig.getDefaultAccount();
-            accountName = vietQRConfig.getDefaultAccountName();
-            bankId = vietQRConfig.getDefaultBankId();
-        }
-
-        return vietQRService.generateDynamicQRUrl(
-            bankId, accountNumber, accountName, amount, transferContent  // Nội dung kết hợp
-        );
-    }
-
-    /**
-     * Tạo caption ngắn cho ảnh QR
-     */
     private String buildCaption(StudentFeeDto student, String monthYear) {
         return String.format(
             "🎓 THU HỌC PHÍ THÁNG %s\n\n" +
@@ -210,52 +282,11 @@ public class FeeCollectionService {
             monthYear,
             student.getStudentName(),
             formatCurrency(student.getAmount()),
-            removeVietnameseAccents(student.getContent()) + " MTC" + student.getTransactionId(),  // Nội dung không dấu + MTC
-            student.getTransactionId()  // Mã số
-        );
-    }
-    
-    /**
-     * Tạo tin nhắn text đầy đủ (fallback khi gửi ảnh thất bại)
-     */
-    private String buildTextMessage(StudentFeeDto student, String monthYear) {
-        return String.format(
-            "🚀 THU HỌC PHÍ HMEDU\n\n" +
-            "Kính gửi phụ huynh học sinh %s,\n\n" +
-            "Học phí tháng %s:\n" +
-            "💰 Số tiền: %s VNĐ\n" +
-            "📝 Nội dung: %s\n\n" +
-            "Quý phụ huynh vui lòng chuyển khoản:\n" +
-            "🏦 Ngân hàng: %s\n" +
-            "💳 Số TK: %s\n" +
-            "👤 Tên TK: %s\n" +
-            "📝 Nội dung: %s\n\n" +
-            "Hoặc quét mã QR tại: %s\n\n" +
-            "Xin cảm ơn!\nHMEDU",
-            student.getStudentName(),
-            monthYear,
-            formatCurrency(student.getAmount()),
-            student.getContent(),
-            student.getBank(),
-            student.getAccountNumber(),
-            student.getAccountName(),
-            student.getContent(),
-            student.getQrCodeUrl()
+            removeVietnameseAccents(student.getContent()) + " MTC" + student.getTransactionId(),
+            student.getTransactionId()
         );
     }
 
-    /**
-     * Gửi thông báo Zalo (cũ - giữ lại để tương thích)
-     */
-    private boolean sendZaloNotification(StudentFeeDto student, FeeCollectionRecord record) {
-        String monthYear = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM/yyyy"));
-        String caption = buildCaption(student, monthYear);
-        return zaloService.sendImage(student.getPhone(), student.getQrCodeUrl(), caption);
-    }
-
-    /**
-     * Lưu vào database
-     */
     private FeeCollectionRecord saveToDatabase(StudentFeeDto student, String monthYear) {
         FeeCollectionRecord record = FeeCollectionRecord.builder()
             .studentName(student.getStudentName())
@@ -269,23 +300,22 @@ public class FeeCollectionService {
             .qrCodeUrl(student.getQrCodeUrl())
             .paymentStatus(FeeCollectionRecord.PaymentStatus.PENDING)
             .monthYear(monthYear)
-            .transactionId(student.getTransactionId())  // Lưu mã định danh giao dịch
+            .transactionId(student.getTransactionId())
             .build();
-
         return repository.save(record);
     }
 
-    /**
-     * Format số tiền thành chuỗi đọc được
-     */
     private String formatCurrency(BigDecimal amount) {
         if (amount == null) return "0";
         return String.format("%,d", amount.longValue());
     }
 
-    /**
-     * Manual trigger (for testing)
-     */
+    private String getDataDirectory() {
+        String filePath = appConfig.getExcel().getFilePath();
+        File file = new File(filePath);
+        return file.getParent() != null ? file.getParent() : "./data";
+    }
+
     public void triggerManually() {
         processMonthlyFeeCollection();
     }
