@@ -1,0 +1,97 @@
+spring:
+  application:
+    name: fee-collection-service
+  
+  # Database (H2 for development)
+  datasource:
+    url: jdbc:h2:file:./data/fee-collection-db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  
+  h2:
+    console:
+      enabled: false  # Tắt H2 console vì không cần API
+
+# HMEDU Configuration
+hmedu:
+  fee-collection:
+    # Excel Configuration
+    excel:
+      file-path: ${FEE_EXCEL_PATH:./data/Theo dõi học phí tháng 4.xlsx}
+      sheet-name: ${FEE_EXCEL_SHEET:Sheet1}
+      # Column mappings (0-indexed)
+      columns:
+        student-name: 0    # A: Tên học sinh
+        phone: 1           # B: Số điện thoại
+        amount: 17         # R: Số tiền (cột R = 17)
+        content: 6         # G: Nội dung chuyển tiền (cột G = 6)
+        account-name: 21   # V: Tên tài khoản (cột V = 21)
+        account-number: 22 # W: Số tài khoản (cột W = 22)
+        bank: 23           # X: Ngân hàng (cột X = 23)
+      skip-rows: 1         # Skip header row
+    
+    # VietQR Configuration
+    vietqr:
+      enabled: true
+      api-url: https://api.vietqr.io/v2/generate
+      default-bank-id: ${DEFAULT_BANK_ID:970407}  # Techcombank
+      default-account: ${DEFAULT_ACCOUNT:}
+      default-account-name: ${DEFAULT_ACCOUNT_NAME:}
+      add-info-prefix: ${QR_PREFIX:HMEDU}
+    
+    # Zalo API Configuration
+    zalo:
+      enabled: true
+      api-url: ${ZALO_API_URL:http://10.10.33.99:10000}
+      # Message template
+      message-template: |
+        Kính gửi phụ huynh học sinh {studentName},
+        
+        Nhà trường xin thông báo đến quý phụ huynh về khoản học phí tháng {month}:
+        
+        💰 Số tiền: {amount} VNĐ
+        📝 Nội dung: {content}
+        
+        Quý phụ huynh vui lòng quét mã QR để thanh toán:
+        {qrCodeUrl}
+        
+        Hoặc chuyển khoản:
+        - Ngân hàng: {bank}
+        - Số TK: {accountNumber}
+        - Tên TK: {accountName}
+        - Nội dung: {content}
+        
+        Xin cảm ơn!
+        HMEDU
+    
+    # Scheduler - Chạy định kỳ
+    scheduler:
+      # Mặc định: 8h sáng ngày 1 hàng tháng
+      cron: ${FEE_CRON:0 0 8 1 * ?}
+      
+      # TEST: Chạy mỗi phút (bỏ comment để test)
+      # cron: "0 * * * * ?"
+
+# Tắt web server
+server:
+  port: 0  # Random port, không expose
+
+# Logging
+logging:
+  file:
+    name: ./logs/fee-collection.log
+  level:
+    com.hmedu: INFO
+    root: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
