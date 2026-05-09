@@ -1,40 +1,20 @@
 version: '3.8'
 
 services:
-  # Java Fee Collection Service
   fee-collection:
     build: .
     container_name: hmedu-fee-service
     volumes:
-      - ./data:/app/data          # Mount thư mục chứa file Excel
-      - ./logs:/app/logs          # Mount thư mục logs
-      - fee-db:/app/data/db       # Volume cho H2 database
+      - ./data:/app/data          # File Excel học phí
+      - ./logs:/app/logs          # Logs
+      - fee-db:/app/data/db       # H2 database
     environment:
       - FEE_EXCEL_PATH=/app/data/fee.xlsx
-      - ZALO_API_URL=http://zalo-api:10000
+      - ZALO_API_URL=http://10.10.33.99:10000
       - DEFAULT_BANK_ID=970407
       - FEE_CRON=0 0 8 1 * ?      # 8h sáng ngày 1 hàng tháng
       # - FEE_CRON=0 */5 * * * ?   # Test: chạy mỗi 5 phút
-    networks:
-      - hmedu-network
     restart: unless-stopped
-    depends_on:
-      - zalo-api
-
-  # Zalo API Service (giả sử chạy cùng máy hoặc có thể truy cập)
-  zalo-api:
-    # Nếu Zalo API chạy trên máy khác, thay bằng external network
-    # Hoặc có thể bỏ phần này nếu Zalo API đã chạy sẵn
-    image: alpine
-    container_name: zalo-api-placeholder
-    command: ["sh", "-c", "echo 'Zalo API should be accessible at http://10.10.33.99:10000' && sleep 3600"]
-    networks:
-      - hmedu-network
-    # external_links hoặc dùng network_mode nếu cần
 
 volumes:
   fee-db:
-
-networks:
-  hmedu-network:
-    driver: bridge
