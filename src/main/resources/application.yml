@@ -75,8 +75,8 @@ hmedu:
     
     # Scheduler - Chạy định kỳ
     scheduler:
-      # Mặc định: 8h sáng ngày 1 hàng tháng
-      cron: ${FEE_CRON:0 0 8 1 * ?}
+      # Chạy mỗi 5 phút để kiểm tra file mới
+      cron: ${FEE_CRON:0 */5 * * * ?}
       
       # TEST: Chạy mỗi phút (bỏ comment để test)
       # cron: "0 * * * * ?"

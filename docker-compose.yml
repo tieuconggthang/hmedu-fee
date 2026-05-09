@@ -12,8 +12,8 @@ services:
       - FEE_EXCEL_PATH=/app/data/fee.xlsx
       - ZALO_API_URL=http://10.10.33.99:10000
       - DEFAULT_BANK_ID=970407
-      - FEE_CRON=0 0 8 1 * ?      # 8h sáng ngày 1 hàng tháng
-      # - FEE_CRON=0 */5 * * * ?   # Test: chạy mỗi 5 phút
+      # - FEE_CRON=0 0 8 1 * ?      # 8h sáng ngày 1 hàng tháng
+      - FEE_CRON=0 */5 * * * ?      # Chạy mỗi 5 phút
     restart: unless-stopped
 
 volumes:
