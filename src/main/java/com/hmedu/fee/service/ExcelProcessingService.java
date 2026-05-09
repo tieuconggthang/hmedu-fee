@@ -45,9 +45,10 @@ public class ExcelProcessingService {
         try (FileInputStream fis = new FileInputStream(filePath);
              Workbook workbook = new XSSFWorkbook(fis)) {
             
-            Sheet sheet = workbook.getSheet(sheetName);
+            Sheet sheet = workbook.getSheetAt(0);  // Lấy sheet đầu tiên
+            String sheetName = sheet.getSheetName();
             if (sheet == null) {
-                log.error("Sheet '{}' not found in file: {}", sheetName, filePath);
+                log.error("No sheets found in file: {}", filePath);
                 return students;
             }
             
