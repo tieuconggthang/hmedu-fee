@@ -26,7 +26,7 @@ RUN mkdir -p /app/data /app/logs
 # Environment variables
 ENV JAVA_OPTS="-Xms256m -Xmx512m"
 ENV FEE_EXCEL_PATH=/app/data/fee.xlsx
-ENV ZALO_API_URL=http://zalo-api:10000
+ENV ZALO_API_URL=http://10.10.33.99:10000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
