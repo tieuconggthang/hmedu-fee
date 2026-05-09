@@ -58,23 +58,36 @@ public class ExcelProcessingService {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
                 
-                Cell nameCell = row.getCell(colName);
-                if (nameCell == null || getCellValue(nameCell).trim().isEmpty()) {
-                    continue;
-                }
-                
                 // Xử lý phone
                 String phone = getCellValue(row.getCell(colPhone));
                 phone = normalizePhoneNumber(phone);
+                
+                // Kiểm tra dòng hợp lệ: phải có tên, số điện thoại hợp lệ, và số tiền > 0
+                String studentName = getCellValue(row.getCell(colName));
+                if (studentName == null || studentName.trim().isEmpty()) {
+                    log.debug("Row {}: Skip - empty student name", i);
+                    continue;
+                }
+                
+                if (phone.isEmpty()) {
+                    log.warn("Row {}: Skip student '{}' - invalid phone number", i, studentName);
+                    continue;
+                }
+                
+                BigDecimal amount = getBigDecimalValue(row.getCell(colAmount));
+                if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+                    log.warn("Row {}: Skip student '{}' - invalid amount: {}", i, studentName, amount);
+                    continue;
+                }
                 
                 // Tạo transactionId
                 String transactionId = generateNumericTransactionId(i);
                 
                 StudentFeeDto student = StudentFeeDto.builder()
                     .rowIndex(i)
-                    .studentName(getCellValue(row.getCell(colName)))
+                    .studentName(studentName)
                     .phone(phone)
-                    .amount(getBigDecimalValue(row.getCell(colAmount)))
+                    .amount(amount)
                     .content(getCellValue(row.getCell(colContent)))
                     .transactionId(transactionId)
                     .accountName(getCellValue(row.getCell(colAccountName)))
