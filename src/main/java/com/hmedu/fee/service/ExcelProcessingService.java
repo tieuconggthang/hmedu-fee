@@ -21,16 +21,9 @@ public class ExcelProcessingService {
     private final AppConfig config;
     
     /**
-     * Đọc danh sách từ file Excel cụ thể
+     * Đọc danh sách từ file Excel - Lấy sheet đầu tiên
      */
     public List<StudentFeeDto> readFeeDataFromFile(String filePath) {
-        return readFeeDataFromFile(filePath, config.getExcel().getSheetName());
-    }
-    
-    /**
-     * Đọc danh sách từ file Excel với sheet cụ thể
-     */
-    public List<StudentFeeDto> readFeeDataFromFile(String filePath, String sheetName) {
         List<StudentFeeDto> students = new ArrayList<>();
         
         int skipRows = config.getExcel().getSkipRows();
@@ -45,39 +38,41 @@ public class ExcelProcessingService {
         try (FileInputStream fis = new FileInputStream(filePath);
              Workbook workbook = new XSSFWorkbook(fis)) {
             
-            Sheet sheet = workbook.getSheetAt(0);  // Lấy sheet đầu tiên
+            // Lấy sheet đầu tiên (index 0)
+            Sheet sheet = workbook.getSheetAt(0);
             String actualSheetName = sheet.getSheetName();
-            if (sheet == null) {
-                log.error("No sheets found in file: {}", filePath);
-                return students;
-            }
             
             log.info("Reading Excel file: {}, Sheet: {}, Total rows: {}", 
                 filePath, actualSheetName, sheet.getPhysicalNumberOfRows());
+            
+            int validCount = 0;
+            int skipCount = 0;
             
             for (int i = skipRows; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
                 
-                // Xử lý phone
+                // Kiểm tra tên học sinh
+                String studentName = getCellValue(row.getCell(colName));
+                if (studentName.trim().isEmpty()) {
+                    skipCount++;
+                    continue;
+                }
+                
+                // Xử lý số điện thoại
                 String phone = getCellValue(row.getCell(colPhone));
                 phone = normalizePhoneNumber(phone);
-                
-                // Kiểm tra dòng hợp lệ: phải có tên, số điện thoại hợp lệ, và số tiền > 0
-                String studentName = getCellValue(row.getCell(colName));
-                if (studentName == null || studentName.trim().isEmpty()) {
-                    log.debug("Row {}: Skip - empty student name", i);
-                    continue;
-                }
-                
                 if (phone.isEmpty()) {
-                    log.warn("Row {}: Skip student '{}' - invalid phone number", i, studentName);
+                    log.warn("Row {}: Skip '{}' - invalid phone", i, studentName);
+                    skipCount++;
                     continue;
                 }
                 
+                // Kiểm tra số tiền
                 BigDecimal amount = getBigDecimalValue(row.getCell(colAmount));
-                if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-                    log.warn("Row {}: Skip student '{}' - invalid amount: {}", i, studentName, amount);
+                if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                    log.warn("Row {}: Skip '{}' - invalid amount: {}", i, studentName, amount);
+                    skipCount++;
                     continue;
                 }
                 
@@ -97,11 +92,12 @@ public class ExcelProcessingService {
                     .build();
                 
                 students.add(student);
-                log.debug("Read student: {}, transactionId: {}", 
-                    student.getStudentName(), transactionId);
+                validCount++;
+                log.debug("Read student: {}, transactionId: {}", studentName, transactionId);
             }
             
-            log.info("Successfully read {} students from file: {}", students.size(), filePath);
+            log.info("File {}: {} valid students, {} skipped rows", 
+                filePath, validCount, skipCount);
             
         } catch (Exception e) {
             log.error("Error reading Excel file: {}", filePath, e);
@@ -111,7 +107,7 @@ public class ExcelProcessingService {
     }
     
     /**
-     * Đọc danh sách từ file Excel mặc định (từ config)
+     * Đọc danh sách từ file Excel mặc định
      */
     public List<StudentFeeDto> readFeeData() {
         return readFeeDataFromFile(config.getExcel().getFilePath());
@@ -160,7 +156,7 @@ public class ExcelProcessingService {
     }
     
     /**
-     * Chuẩn hóa số điện thoại: nếu bắt đầu bằng 0 thì thay bằng 84
+     * Chuẩn hóa số điện thoại: 0xxxxx -> 84xxxxx
      */
     private String normalizePhoneNumber(String phone) {
         if (phone == null || phone.trim().isEmpty()) {
@@ -171,26 +167,18 @@ public class ExcelProcessingService {
         
         if (phone.startsWith("0")) {
             phone = "84" + phone.substring(1);
-            log.debug("Normalized phone number: {}", phone);
         }
         
         return phone;
     }
     
     /**
-     * Tạo mã giao dịch số duy nhất
-     * Format: YYMMDD + 4 số rowIndex (vd: 2505080042)
+     * Tạo mã giao dịch: YYMMDD + rowIndex
      */
     public String generateNumericTransactionId(int rowIndex) {
         java.time.LocalDate now = java.time.LocalDate.now();
         String dateStr = String.format("%02d%02d%02d", 
-            now.getYear() % 100, 
-            now.getMonthValue(), 
-            now.getDayOfMonth());
-        
-        String transactionId = String.format("%s%04d", dateStr, rowIndex);
-        
-        log.debug("Generated transactionId: {} for row {}", transactionId, rowIndex);
-        return transactionId;
+            now.getYear() % 100, now.getMonthValue(), now.getDayOfMonth());
+        return String.format("%s%04d", dateStr, rowIndex);
     }
 }
