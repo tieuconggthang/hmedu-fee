@@ -1,0 +1,222 @@
+2026-05-09 03:37:41 [main] INFO  c.hmedu.fee.FeeCollectionApplication - Starting FeeCollectionApplication v1.0.0 using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-05-09 03:37:41 [main] INFO  c.hmedu.fee.FeeCollectionApplication - No active profile set, falling back to 1 default profile: "default"
+2026-05-09 03:37:43 [main] WARN  o.s.b.w.r.c.AnnotationConfigReactiveWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'feeCollectionApplication': Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'feeCollectionService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/FeeCollectionService.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'vietQRService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/VietQRService.class]: Unsatisfied dependency expressed through constructor parameter 1: No qualifying bean of type 'org.springframework.web.reactive.function.client.WebClient' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+2026-05-09 03:37:43 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 1 of constructor in com.hmedu.fee.service.VietQRService required a bean of type 'org.springframework.web.reactive.function.client.WebClient' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'org.springframework.web.reactive.function.client.WebClient' in your configuration.
+
+2026-05-09 03:37:45 [main] INFO  c.hmedu.fee.FeeCollectionApplication - Starting FeeCollectionApplication v1.0.0 using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-05-09 03:37:45 [main] INFO  c.hmedu.fee.FeeCollectionApplication - No active profile set, falling back to 1 default profile: "default"
+2026-05-09 03:37:46 [main] WARN  o.s.b.w.r.c.AnnotationConfigReactiveWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'feeCollectionApplication': Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'feeCollectionService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/FeeCollectionService.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'vietQRService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/VietQRService.class]: Unsatisfied dependency expressed through constructor parameter 1: No qualifying bean of type 'org.springframework.web.reactive.function.client.WebClient' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+2026-05-09 03:37:47 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 1 of constructor in com.hmedu.fee.service.VietQRService required a bean of type 'org.springframework.web.reactive.function.client.WebClient' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'org.springframework.web.reactive.function.client.WebClient' in your configuration.
+
+2026-05-09 03:37:48 [main] INFO  c.hmedu.fee.FeeCollectionApplication - Starting FeeCollectionApplication v1.0.0 using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-05-09 03:37:48 [main] INFO  c.hmedu.fee.FeeCollectionApplication - No active profile set, falling back to 1 default profile: "default"
+2026-05-09 03:37:50 [main] WARN  o.s.b.w.r.c.AnnotationConfigReactiveWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'feeCollectionApplication': Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'feeCollectionService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/FeeCollectionService.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'vietQRService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/VietQRService.class]: Unsatisfied dependency expressed through constructor parameter 1: No qualifying bean of type 'org.springframework.web.reactive.function.client.WebClient' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+2026-05-09 03:37:50 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 1 of constructor in com.hmedu.fee.service.VietQRService required a bean of type 'org.springframework.web.reactive.function.client.WebClient' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'org.springframework.web.reactive.function.client.WebClient' in your configuration.
+
+2026-05-09 03:37:51 [main] INFO  c.hmedu.fee.FeeCollectionApplication - Starting FeeCollectionApplication v1.0.0 using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-05-09 03:37:51 [main] INFO  c.hmedu.fee.FeeCollectionApplication - No active profile set, falling back to 1 default profile: "default"
+2026-05-09 03:37:54 [main] WARN  o.s.b.w.r.c.AnnotationConfigReactiveWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'feeCollectionApplication': Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'feeCollectionService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/FeeCollectionService.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'vietQRService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/VietQRService.class]: Unsatisfied dependency expressed through constructor parameter 1: No qualifying bean of type 'org.springframework.web.reactive.function.client.WebClient' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+2026-05-09 03:37:54 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 1 of constructor in com.hmedu.fee.service.VietQRService required a bean of type 'org.springframework.web.reactive.function.client.WebClient' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'org.springframework.web.reactive.function.client.WebClient' in your configuration.
+
+2026-05-09 03:37:55 [main] INFO  c.hmedu.fee.FeeCollectionApplication - Starting FeeCollectionApplication v1.0.0 using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-05-09 03:37:55 [main] INFO  c.hmedu.fee.FeeCollectionApplication - No active profile set, falling back to 1 default profile: "default"
+2026-05-09 03:37:57 [main] WARN  o.s.b.w.r.c.AnnotationConfigReactiveWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'feeCollectionApplication': Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'feeCollectionService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/FeeCollectionService.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'vietQRService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/VietQRService.class]: Unsatisfied dependency expressed through constructor parameter 1: No qualifying bean of type 'org.springframework.web.reactive.function.client.WebClient' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+2026-05-09 03:37:58 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 1 of constructor in com.hmedu.fee.service.VietQRService required a bean of type 'org.springframework.web.reactive.function.client.WebClient' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'org.springframework.web.reactive.function.client.WebClient' in your configuration.
+
+2026-05-09 03:38:00 [main] INFO  c.hmedu.fee.FeeCollectionApplication - Starting FeeCollectionApplication v1.0.0 using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-05-09 03:38:00 [main] INFO  c.hmedu.fee.FeeCollectionApplication - No active profile set, falling back to 1 default profile: "default"
+2026-05-09 03:38:02 [main] WARN  o.s.b.w.r.c.AnnotationConfigReactiveWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'feeCollectionApplication': Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'feeCollectionService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/FeeCollectionService.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'vietQRService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/VietQRService.class]: Unsatisfied dependency expressed through constructor parameter 1: No qualifying bean of type 'org.springframework.web.reactive.function.client.WebClient' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+2026-05-09 03:38:02 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 1 of constructor in com.hmedu.fee.service.VietQRService required a bean of type 'org.springframework.web.reactive.function.client.WebClient' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'org.springframework.web.reactive.function.client.WebClient' in your configuration.
+
+2026-05-09 03:38:07 [main] INFO  c.hmedu.fee.FeeCollectionApplication - Starting FeeCollectionApplication v1.0.0 using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-05-09 03:38:07 [main] INFO  c.hmedu.fee.FeeCollectionApplication - No active profile set, falling back to 1 default profile: "default"
+2026-05-09 03:38:10 [main] WARN  o.s.b.w.r.c.AnnotationConfigReactiveWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'feeCollectionApplication': Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'feeCollectionService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/FeeCollectionService.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'vietQRService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/VietQRService.class]: Unsatisfied dependency expressed through constructor parameter 1: No qualifying bean of type 'org.springframework.web.reactive.function.client.WebClient' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+2026-05-09 03:38:10 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 1 of constructor in com.hmedu.fee.service.VietQRService required a bean of type 'org.springframework.web.reactive.function.client.WebClient' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'org.springframework.web.reactive.function.client.WebClient' in your configuration.
+
+2026-05-09 03:38:17 [main] INFO  c.hmedu.fee.FeeCollectionApplication - Starting FeeCollectionApplication v1.0.0 using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-05-09 03:38:17 [main] INFO  c.hmedu.fee.FeeCollectionApplication - No active profile set, falling back to 1 default profile: "default"
+2026-05-09 03:38:19 [main] WARN  o.s.b.w.r.c.AnnotationConfigReactiveWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'feeCollectionApplication': Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'feeCollectionService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/FeeCollectionService.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'vietQRService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/VietQRService.class]: Unsatisfied dependency expressed through constructor parameter 1: No qualifying bean of type 'org.springframework.web.reactive.function.client.WebClient' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+2026-05-09 03:38:20 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 1 of constructor in com.hmedu.fee.service.VietQRService required a bean of type 'org.springframework.web.reactive.function.client.WebClient' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'org.springframework.web.reactive.function.client.WebClient' in your configuration.
+
+2026-05-09 03:38:33 [main] INFO  c.hmedu.fee.FeeCollectionApplication - Starting FeeCollectionApplication v1.0.0 using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-05-09 03:38:33 [main] INFO  c.hmedu.fee.FeeCollectionApplication - No active profile set, falling back to 1 default profile: "default"
+2026-05-09 03:38:35 [main] WARN  o.s.b.w.r.c.AnnotationConfigReactiveWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'feeCollectionApplication': Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'feeCollectionService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/FeeCollectionService.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'vietQRService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/VietQRService.class]: Unsatisfied dependency expressed through constructor parameter 1: No qualifying bean of type 'org.springframework.web.reactive.function.client.WebClient' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+2026-05-09 03:38:36 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 1 of constructor in com.hmedu.fee.service.VietQRService required a bean of type 'org.springframework.web.reactive.function.client.WebClient' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'org.springframework.web.reactive.function.client.WebClient' in your configuration.
+
+2026-05-09 03:39:02 [main] INFO  c.hmedu.fee.FeeCollectionApplication - Starting FeeCollectionApplication v1.0.0 using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-05-09 03:39:02 [main] INFO  c.hmedu.fee.FeeCollectionApplication - No active profile set, falling back to 1 default profile: "default"
+2026-05-09 03:39:04 [main] WARN  o.s.b.w.r.c.AnnotationConfigReactiveWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'feeCollectionApplication': Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'feeCollectionService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/FeeCollectionService.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'vietQRService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/VietQRService.class]: Unsatisfied dependency expressed through constructor parameter 1: No qualifying bean of type 'org.springframework.web.reactive.function.client.WebClient' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+2026-05-09 03:39:04 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 1 of constructor in com.hmedu.fee.service.VietQRService required a bean of type 'org.springframework.web.reactive.function.client.WebClient' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'org.springframework.web.reactive.function.client.WebClient' in your configuration.
+
+2026-05-09 03:39:56 [main] INFO  c.hmedu.fee.FeeCollectionApplication - Starting FeeCollectionApplication v1.0.0 using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-05-09 03:39:56 [main] INFO  c.hmedu.fee.FeeCollectionApplication - No active profile set, falling back to 1 default profile: "default"
+2026-05-09 03:39:58 [main] WARN  o.s.b.w.r.c.AnnotationConfigReactiveWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'feeCollectionApplication': Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'feeCollectionService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/FeeCollectionService.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'vietQRService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/VietQRService.class]: Unsatisfied dependency expressed through constructor parameter 1: No qualifying bean of type 'org.springframework.web.reactive.function.client.WebClient' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+2026-05-09 03:39:58 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 1 of constructor in com.hmedu.fee.service.VietQRService required a bean of type 'org.springframework.web.reactive.function.client.WebClient' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'org.springframework.web.reactive.function.client.WebClient' in your configuration.
+
+2026-05-09 03:41:00 [main] INFO  c.hmedu.fee.FeeCollectionApplication - Starting FeeCollectionApplication v1.0.0 using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-05-09 03:41:00 [main] INFO  c.hmedu.fee.FeeCollectionApplication - No active profile set, falling back to 1 default profile: "default"
+2026-05-09 03:41:02 [main] WARN  o.s.b.w.r.c.AnnotationConfigReactiveWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'feeCollectionApplication': Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'feeCollectionService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/FeeCollectionService.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'vietQRService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/VietQRService.class]: Unsatisfied dependency expressed through constructor parameter 1: No qualifying bean of type 'org.springframework.web.reactive.function.client.WebClient' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+2026-05-09 03:41:02 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 1 of constructor in com.hmedu.fee.service.VietQRService required a bean of type 'org.springframework.web.reactive.function.client.WebClient' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'org.springframework.web.reactive.function.client.WebClient' in your configuration.
+
+2026-05-09 03:42:03 [main] INFO  c.hmedu.fee.FeeCollectionApplication - Starting FeeCollectionApplication v1.0.0 using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-05-09 03:42:03 [main] INFO  c.hmedu.fee.FeeCollectionApplication - No active profile set, falling back to 1 default profile: "default"
+2026-05-09 03:42:05 [main] WARN  o.s.b.w.r.c.AnnotationConfigReactiveWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'feeCollectionApplication': Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'feeCollectionService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/FeeCollectionService.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'vietQRService' defined in URL [jar:nested:/app/app.jar/!BOOT-INF/classes/!/com/hmedu/fee/service/VietQRService.class]: Unsatisfied dependency expressed through constructor parameter 1: No qualifying bean of type 'org.springframework.web.reactive.function.client.WebClient' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+2026-05-09 03:42:41 [main] INFO  c.hmedu.fee.FeeCollectionApplication - Starting FeeCollectionApplication v1.0.0 using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-05-09 03:42:41 [main] INFO  c.hmedu.fee.FeeCollectionApplication - No active profile set, falling back to 1 default profile: "default"
+2026-05-09 03:42:44 [main] INFO  c.hmedu.fee.FeeCollectionApplication - Started FeeCollectionApplication in 3.626 seconds (process running for 4.097)

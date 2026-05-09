@@ -2,7 +2,9 @@ package com.hmedu.fee.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Map;
 
@@ -43,5 +45,10 @@ public class AppConfig {
     @Data
     public static class SchedulerConfig {
         private String cron;
+    }
+    
+    @Bean
+    public WebClient webClient() {
+        return WebClient.builder().build();
     }
 }
