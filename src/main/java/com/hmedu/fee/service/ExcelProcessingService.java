@@ -46,14 +46,14 @@ public class ExcelProcessingService {
              Workbook workbook = new XSSFWorkbook(fis)) {
             
             Sheet sheet = workbook.getSheetAt(0);  // Lấy sheet đầu tiên
-            String sheetName = sheet.getSheetName();
+            String actualSheetName = sheet.getSheetName();
             if (sheet == null) {
                 log.error("No sheets found in file: {}", filePath);
                 return students;
             }
             
             log.info("Reading Excel file: {}, Sheet: {}, Total rows: {}", 
-                filePath, sheetName, sheet.getPhysicalNumberOfRows());
+                filePath, actualSheetName, sheet.getPhysicalNumberOfRows());
             
             for (int i = skipRows; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
