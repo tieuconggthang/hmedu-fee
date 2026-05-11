@@ -81,6 +81,23 @@ hmedu:
       # TEST: Chạy mỗi phút (bỏ comment để test)
       # cron: "0 * * * * ?"
 
+# Email Configuration - Đọc thông báo chuyển khoản từ Gmail
+email:
+  enabled: ${EMAIL_ENABLED:false}
+  # Gmail address (VD: your-email@gmail.com)
+  username: ${EMAIL_USERNAME:}
+  # App Password - Tạo tại https://myaccount.google.com/apppasswords
+  # KHÔNG dùng mật khẩu Gmail thường
+  password: ${EMAIL_PASSWORD:}
+  # Folder để đọc email (VD: "INBOX", "Thông báo giao dịch", "Techcombank", "biendongsodu")
+  folder: ${EMAIL_FOLDER:biendongsodu}
+  # ThờI gian giữa các lần check (millisecond)
+  check-interval: ${EMAIL_CHECK_INTERVAL:300000}
+  # IMAP Server (default: imap.gmail.com)
+  host: ${EMAIL_HOST:imap.gmail.com}
+  # IMAP Port (default: 993)
+  port: ${EMAIL_PORT:993}
+
 # Tắt web server
 server:
   port: 0  # Random port, không expose
