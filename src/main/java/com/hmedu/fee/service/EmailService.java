@@ -2,6 +2,7 @@ package com.hmedu.fee.service;
 
 import com.hmedu.fee.config.EmailConfig;
 import jakarta.mail.*;
+import jakarta.mail.search.FlagTerm;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

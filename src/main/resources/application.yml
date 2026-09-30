@@ -51,7 +51,7 @@ hmedu:
     # Zalo API Configuration
     zalo:
       enabled: true
-      api-url: ${ZALO_API_URL:http://10.10.33.99:10000}
+      api-url: ${ZALO_API_URL:https://zalo.edu.eric.pro.vn}
       # Message template
       message-template: |
         Kính gửi phụ huynh học sinh {studentName},
@@ -98,9 +98,13 @@ email:
   # IMAP Port (default: 993)
   port: ${EMAIL_PORT:993}
 
-# Tắt web server
+# API Security
+api:
+  secret-key: ${API_SECRET_KEY:}
+
+# Web Server
 server:
-  port: 0  # Random port, không expose
+  port: 8080
 
 # Logging
 logging:

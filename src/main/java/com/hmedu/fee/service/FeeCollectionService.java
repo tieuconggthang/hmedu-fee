@@ -175,7 +175,7 @@ public class FeeCollectionService {
     }
 
     /**
-     * Xử lý từng học sinh
+     * Xử lý từng học sinh (public - dùng cho cả cron và API thủ công)
      */
     @Transactional
     public void processStudent(StudentFeeDto student) {
@@ -230,24 +230,15 @@ public class FeeCollectionService {
     }
 
     /**
-     * Tạo nội dung chuyển khoản
+     * Tạo nội dung chuyển khoản - Đầy đủ không rút gọn
      */
     private String buildTransferContent(StudentFeeDto student) {
+        // Lấy nguyên nội dung từ Excel (cột G) + MTC
         String originalContent = removeVietnameseAccents(student.getContent());
         String transactionId = "MTC" + student.getTransactionId();
-        String combined = originalContent + " " + transactionId;
         
-        if (combined.length() > 25) {
-            int maxOriginalLength = 25 - transactionId.length() - 1;
-            if (maxOriginalLength > 0) {
-                String shortContent = originalContent.substring(0, 
-                    Math.min(originalContent.length(), maxOriginalLength));
-                combined = shortContent + " " + transactionId;
-            } else {
-                combined = transactionId;
-            }
-        }
-        return combined.trim();
+        // Ghép đầy đủ, không giới hạn 25 ký tự
+        return originalContent + " " + transactionId;
     }
 
     private String removeVietnameseAccents(String text) {
@@ -271,14 +262,16 @@ public class FeeCollectionService {
     }
 
     private String buildCaption(StudentFeeDto student, String monthYear) {
+        // Format đẹp với emoji và xuống dòng - sẽ được URL encode trong ZaloService
         return String.format(
             "🎓 THU HỌC PHÍ THÁNG %s\n\n" +
             "Kính gửi phụ huynh học sinh %s,\n\n" +
             "• Học phí: %s VNĐ\n" +
             "• Nội dung CK: %s\n" +
             "• Mã tham chiếu: MTC%s\n\n" +
-            "Vui lòng ghi đúng nội dung CK khi thanh toán.\n\n" +
-            "Quét mã QR để thanh toán nhanh chóng.\nXin cảm ơn!\nHMEDU",
+            "Quét mã QR để thanh toán nhanh chóng.\n" +
+            "Xin cảm ơn! 🙏\n\n" +
+            "HMEDU 🏫",
             monthYear,
             student.getStudentName(),
             formatCurrency(student.getAmount()),

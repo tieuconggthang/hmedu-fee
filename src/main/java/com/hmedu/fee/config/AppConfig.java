@@ -46,9 +46,4 @@ public class AppConfig {
     public static class SchedulerConfig {
         private String cron;
     }
-    
-    @Bean
-    public WebClient webClient() {
-        return WebClient.builder().build();
-    }
 }

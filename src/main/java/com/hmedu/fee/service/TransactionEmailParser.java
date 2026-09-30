@@ -58,28 +58,28 @@ public class TransactionEmailParser {
 
     // Patterns cho Techcombank
     private static final Pattern TECHCOMBANK_AMOUNT = Pattern.compile(
-            "(?:Số tiền|Amount)\s*[:\-]?\s*([0-9,\.]+)\s*(VND|VNĐ|\u20ab)?",
+            "(?:Số tiền|Amount)\\s*[:\\-]?\\s*([0-9,\\.]+)\\s*(VND|VNĐ|\u20ab)?",
             Pattern.CASE_INSENSITIVE);
 
     private static final Pattern TECHCOMBANK_SENDER = Pattern.compile(
-            "(?:Từ|Từ tài khoản|From)\s*[:\-]?\s*([\d\s]+)\s*-\s*([^\n]+)",
+            "(?:Từ|Từ tài khoản|From)\\s*[:\\-]?\\s*([\\d\\s]+)\\s*-\\s*([^\n]+)",
             Pattern.CASE_INSENSITIVE);
 
     private static final Pattern TECHCOMBANK_RECEIVER = Pattern.compile(
-            "(?:Đến|Đến tài khoản|To)\s*[:\-]?\s*([\d\s]+)\s*-\s*([^\n]+)",
+            "(?:Đến|Đến tài khoản|To)\\s*[:\\-]?\\s*([\\d\\s]+)\\s*-\\s*([^\n]+)",
             Pattern.CASE_INSENSITIVE);
 
     private static final Pattern TECHCOMBANK_CONTENT = Pattern.compile(
-            "(?:Nội dung|Description|Content)\s*[:\-]?\s*([^\n]+)",
+            "(?:Nội dung|Description|Content)\\s*[:\\-]?\\s*([^\n]+)",
             Pattern.CASE_INSENSITIVE);
 
     private static final Pattern TECHCOMBANK_TIME = Pattern.compile(
-            "(?:Thời gian|Time|Date)\s*[:\-]?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}[\s\d:]+)",
+            "(?:Thời gian|Time|Date)\\s*[:\\-]?\\s*(\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4}[\\s\\d:]+)",
             Pattern.CASE_INSENSITIVE);
 
     // Pattern tìm MTC code trong nội dung
     private static final Pattern MTC_CODE_PATTERN = Pattern.compile(
-            "MTC\d{6,12}", Pattern.CASE_INSENSITIVE);
+            "MTC\\d{6,12}", Pattern.CASE_INSENSITIVE);
 
     // Pattern tìm số điện thoại
     private static final Pattern PHONE_PATTERN = Pattern.compile(
@@ -179,7 +179,7 @@ public class TransactionEmailParser {
 
         // Transaction ID từ Techcombank
         Pattern txIdPattern = Pattern.compile(
-                "(?:Mã giao dịch|Transaction ID|Ref No)\s*[:\-]?\s*([A-Z0-9]+)",
+                "(?:Mã giao dịch|Transaction ID|Ref No)\\s*[:\\-]?\\s*([A-Z0-9]+)",
                 Pattern.CASE_INSENSITIVE);
         Matcher txIdMatcher = txIdPattern.matcher(content);
         if (txIdMatcher.find()) {
@@ -209,7 +209,7 @@ public class TransactionEmailParser {
     private void parseGeneric(String content, TransactionInfo info) {
         // Tìm số tiền
         Pattern amountPattern = Pattern.compile(
-                "([0-9]{1,3}(?:,[0-9]{3})+(?:\.[0-9]+)?|[0-9]+(?:\.[0-9]+)?)\s*(VND|VNĐ|\u20ab|d)",
+                "([0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]+)?|[0-9]+(?:\\.[0-9]+)?)\\s*(VND|VNĐ|\u20ab|d)",
                 Pattern.CASE_INSENSITIVE);
         Matcher amountMatcher = amountPattern.matcher(content);
         if (amountMatcher.find()) {
@@ -222,7 +222,7 @@ public class TransactionEmailParser {
 
         // Tìm nội dung chuyển khoản
         Pattern contentPattern = Pattern.compile(
-                "(?:Nội dung|Nội dung CK|Description|Memo|Note)\s*[:\-]?\s*([^\n]{5,100})",
+                "(?:Nội dung|Nội dung CK|Description|Memo|Note)\\s*[:\\-]?\\s*([^\n]{5,100})",
                 Pattern.CASE_INSENSITIVE);
         Matcher contentMatcher = contentPattern.matcher(content);
         if (contentMatcher.find()) {
@@ -231,7 +231,7 @@ public class TransactionEmailParser {
 
         // Tìm tên người gửi
         Pattern senderPattern = Pattern.compile(
-                "(?:Từ|From|Người gửi|Sender)\s*[:\-]?\s*([^\n]{2,50})",
+                "(?:Từ|From|Người gửi|Sender)\\s*[:\\-]?\\s*([^\n]{2,50})",
                 Pattern.CASE_INSENSITIVE);
         Matcher senderMatcher = senderPattern.matcher(content);
         if (senderMatcher.find()) {

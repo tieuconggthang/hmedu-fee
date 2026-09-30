@@ -70,6 +70,8 @@ public class ExcelProcessingService {
                 
                 // Kiểm tra số tiền
                 BigDecimal amount = getBigDecimalValue(row.getCell(colAmount));
+                log.info("Row {}: Amount from Excel (col R): {}", i, amount);
+                
                 if (amount.compareTo(BigDecimal.ZERO) <= 0) {
                     log.warn("Row {}: Skip '{}' - invalid amount: {}", i, studentName, amount);
                     skipCount++;
@@ -79,12 +81,16 @@ public class ExcelProcessingService {
                 // Tạo transactionId
                 String transactionId = generateNumericTransactionId(i);
                 
+                // Kiểm tra nội dung chuyển tiền
+                String content = getCellValue(row.getCell(colContent));
+                log.info("Row {}: Content from Excel (col G): '{}'", i, content);
+                
                 StudentFeeDto student = StudentFeeDto.builder()
                     .rowIndex(i)
                     .studentName(studentName)
                     .phone(phone)
                     .amount(amount)
-                    .content(getCellValue(row.getCell(colContent)))
+                    .content(content)
                     .transactionId(transactionId)
                     .accountName(getCellValue(row.getCell(colAccountName)))
                     .accountNumber(getCellValue(row.getCell(colAccountNumber)))
@@ -130,10 +136,30 @@ public class ExcelProcessingService {
             }
             case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
             case FORMULA -> {
+                // Evaluate công thức và lấy giá trị thực tế
                 try {
-                    yield cell.getStringCellValue();
+                    FormulaEvaluator evaluator = cell.getSheet().getWorkbook().getCreationHelper().createFormulaEvaluator();
+                    CellValue cellValue = evaluator.evaluate(cell);
+                    
+                    yield switch (cellValue.getCellType()) {
+                        case STRING -> cellValue.getStringValue().trim();
+                        case NUMERIC -> {
+                            double val = cellValue.getNumberValue();
+                            if (val == Math.floor(val)) {
+                                yield String.valueOf((long) val);
+                            }
+                            yield String.valueOf(val);
+                        }
+                        case BOOLEAN -> String.valueOf(cellValue.getBooleanValue());
+                        default -> "";
+                    };
                 } catch (Exception e) {
-                    yield String.valueOf(cell.getNumericCellValue());
+                    // Fallback: thử lấy cached value
+                    try {
+                        yield cell.getStringCellValue().trim();
+                    } catch (Exception ex) {
+                        yield String.valueOf(cell.getNumericCellValue());
+                    }
                 }
             }
             default -> "";
@@ -142,11 +168,21 @@ public class ExcelProcessingService {
     
     private BigDecimal getBigDecimalValue(Cell cell) {
         if (cell == null) return BigDecimal.ZERO;
-        
+
         try {
             return switch (cell.getCellType()) {
                 case NUMERIC -> BigDecimal.valueOf(cell.getNumericCellValue());
                 case STRING -> new BigDecimal(cell.getStringCellValue().replaceAll("[^\\d.]", ""));
+                case FORMULA -> {
+                    // Evaluate công thức và lấy giá trị số
+                    FormulaEvaluator evaluator = cell.getSheet().getWorkbook().getCreationHelper().createFormulaEvaluator();
+                    CellValue cellValue = evaluator.evaluate(cell);
+                    if (cellValue.getCellType() == CellType.NUMERIC) {
+                        yield BigDecimal.valueOf(cellValue.getNumberValue());
+                    } else {
+                        yield BigDecimal.ZERO;
+                    }
+                }
                 default -> BigDecimal.ZERO;
             };
         } catch (Exception e) {

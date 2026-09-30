@@ -3,11 +3,10 @@ package com.hmedu.fee.service;
 import com.hmedu.fee.config.ZaloConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Map;
 
@@ -17,7 +16,7 @@ import java.util.Map;
 public class ZaloService {
     
     private final ZaloConfig config;
-    private final WebClient.Builder webClientBuilder;
+    private final RestTemplate restTemplate;
     
     /**
      * Gửi tin nhắn Zalo theo số điện thoại
@@ -26,8 +25,6 @@ public class ZaloService {
         try {
             String url = config.getApiUrl() + "/send";
             
-            WebClient webClient = webClientBuilder.build();
-            
             Map<String, Object> requestBody = Map.of(
                 "phone", phone,
                 "message", message
@@ -35,22 +32,22 @@ public class ZaloService {
             
             log.info("Sending Zalo message to: {}", phone);
             
-            var response = webClient.post()
-                .uri(url)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(requestBody)
-                .retrieve()
-                .bodyToMono(Map.class)
-                .block();
+            ResponseEntity<Map> response = restTemplate.postForEntity(
+                url, 
+                new org.springframework.http.HttpEntity<>(requestBody),
+                Map.class
+            );
             
-            if (response != null && Boolean.TRUE.equals(response.get("success"))) {
-                log.info("Zalo message sent successfully to: {}", phone);
-                return true;
-            } else {
-                String error = response != null ? (String) response.get("message") : "Unknown error";
-                log.error("Failed to send Zalo message: {}", error);
-                return false;
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Boolean success = (Boolean) response.getBody().get("success");
+                if (Boolean.TRUE.equals(success)) {
+                    log.info("Zalo message sent successfully to: {}", phone);
+                    return true;
+                }
             }
+            
+            log.error("Failed to send Zalo message: {}", response);
+            return false;
             
         } catch (Exception e) {
             log.error("Error sending Zalo message to {}", phone, e);
@@ -65,16 +62,10 @@ public class ZaloService {
         try {
             String url = config.getApiUrl() + "/login/status";
             
-            WebClient webClient = webClientBuilder.build();
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
             
-            var response = webClient.get()
-                .uri(url)
-                .retrieve()
-                .bodyToMono(Map.class)
-                .block();
-            
-            if (response != null) {
-                Boolean loggedIn = (Boolean) response.get("logged_in");
+            if (response.getBody() != null) {
+                Boolean loggedIn = (Boolean) response.getBody().get("logged_in");
                 return Boolean.TRUE.equals(loggedIn);
             }
             return false;
@@ -97,44 +88,93 @@ public class ZaloService {
     }
     
     /**
-     * Gửi ảnh kèm caption qua Zalo API
-     * Sử dụng HTTP POST /send-image (query params)
+     * Gửi ảnh kèm caption qua Zalo API - Dùng RestTemplate thay vì WebClient
      */
     public boolean sendImage(String phone, String imageUrl, String caption) {
-        try {
-            log.info("Sending image to phone: {}", phone);
-            
-            // Encode caption để truyền qua URL
-            String encodedCaption = java.net.URLEncoder.encode(caption, java.nio.charset.StandardCharsets.UTF_8);
-            
-            // Gọi API /send-image với query params
-            String url = String.format("%s/send-image?phone=%s&image_url=%s&caption=%s",
-                config.getApiUrl(),
-                phone,
-                java.net.URLEncoder.encode(imageUrl, java.nio.charset.StandardCharsets.UTF_8),
-                encodedCaption
-            );
-            
-            WebClient webClient = webClientBuilder.build();
-            
-            var response = webClient.post()
-                .uri(url)
-                .retrieve()
-                .bodyToMono(Map.class)
-                .block();
-            
-            if (response != null && Boolean.TRUE.equals(response.get("success"))) {
-                log.info("Image sent successfully to: {}", phone);
-                return true;
-            } else {
-                String error = response != null ? (String) response.get("message") : "Unknown error";
-                log.error("Failed to send image: {}", error);
-                return false;
+        int maxRetries = 3;
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                log.info("[Attempt {}/{}] Sending image to phone: {}", attempt, maxRetries, phone);
+                
+                if (attempt > 1) {
+                    Thread.sleep(2000);
+                }
+                
+                // Dùng POST /send-image-json với JSON body (tránh lỗi URL encoding, gửi bằng phone)
+                String url = config.getApiUrl() + "/send-image-json";
+                
+                Map<String, Object> requestBody = Map.of(
+                    "phone", phone,
+                    "image_url", imageUrl,  // URL gốc, OpenZCA sẽ decode nếu cần
+                    "caption", caption
+                );
+                
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                
+                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+                
+                // LOG để test
+                log.info("========================================");
+                log.info("POST /send-image-json");
+                log.info("Request body: {}", requestBody);
+                log.info("========================================");
+                
+                ResponseEntity<Map> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    entity,
+                    Map.class
+                );
+                
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    Boolean success = (Boolean) response.getBody().get("success");
+                    if (Boolean.TRUE.equals(success)) {
+                        log.info("Image sent successfully to: {} (attempt {})", phone, attempt);
+                        return true;
+                    } else {
+                        String error = (String) response.getBody().get("message");
+                        log.warn("Attempt {} failed: {}", attempt, error);
+                        if (attempt == maxRetries) {
+                            log.error("Failed after {} attempts: {}", maxRetries, error);
+                            return false;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Attempt {} error: {}", attempt, e.getMessage());
+                if (attempt == maxRetries) {
+                    log.error("Error after {} attempts", maxRetries, e);
+                    return false;
+                }
             }
+        }
+        return false;
+    }
+    
+    /**
+     * Lookup user_id từ số điện thoại qua /friends
+     */
+    private String lookupUserIdByPhone(String phone) {
+        try {
+            String url = config.getApiUrl() + "/friends";
             
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            
+            if (response.getBody() != null && response.getBody().containsKey("friends")) {
+                java.util.List<Map<String, Object>> friends = (java.util.List<Map<String, Object>>) response.getBody().get("friends");
+                
+                for (Map<String, Object> friend : friends) {
+                    String friendPhone = (String) friend.get("phoneNumber");
+                    if (phone.equals(friendPhone)) {
+                        return (String) friend.get("userId");
+                    }
+                }
+            }
+            return null;
         } catch (Exception e) {
-            log.error("Error sending image to {}", phone, e);
-            return false;
+            log.error("Error looking up user_id for phone: {}", phone, e);
+            return null;
         }
     }
 }
