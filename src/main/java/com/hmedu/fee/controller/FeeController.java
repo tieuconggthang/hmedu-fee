@@ -217,8 +217,8 @@ public class FeeController {
             String accountName = getString(request, "accountName");
 
             // Tạo transactionId
-            String transactionId = getString(request, "transactionId");
-            if (transactionId == null || transactionId.isEmpty()) {
+            String transactionId = request.get("transactionId") != null ? request.get("transactionId").toString() : "";
+            if (transactionId.isEmpty()) {
                 String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
                 transactionId = ts + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
             }
@@ -248,7 +248,6 @@ public class FeeController {
                 "transactionId", transactionId,
                 "qrCodeUrl", qrCodeUrl,
                 "imagePath", imagePath,
-                "imageUrl", imageUrlForZalo,
                 "zaloSent", zaloSent
             ));
 
