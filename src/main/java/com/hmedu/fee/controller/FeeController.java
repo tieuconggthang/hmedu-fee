@@ -187,22 +187,22 @@ public class FeeController {
     /**
      * API gửi thông báo học phí dạng ảnh/template kèm QR qua Zalo
      */
-    @PostMapping("/send-image")
-    public ResponseEntity<Map<String, Object>> sendFeeImage(
+    @PostMapping("/sendFeeTemplate")
+    public ResponseEntity<Map<String, Object>> sendFeeTemplate(
             @RequestHeader(value = "X-API-Key", required = false) String apiKey,
             @RequestBody Map<String, Object> request) {
 
         try {
             validateApiKey(apiKey);
         } catch (SecurityException e) {
-            log.warn("Unauthorized access to /send-image: invalid API key");
+            log.warn("Unauthorized access to /sendFeeTemplate: invalid API key");
             return ResponseEntity.status(401).body(Map.of(
                 "success", false,
                 "message", "Unauthorized: " + e.getMessage()
             ));
         }
 
-        log.info("API /api/fee/send-image called: {}", request);
+        log.info("API /api/fee/sendFeeTemplate called: {}", request);
 
         try {
             // Lấy thông tin
@@ -232,21 +232,27 @@ public class FeeController {
             // Tạo ảnh template
             String imagePath = imageGeneratorService.generateFeeImage(request, qrCodeUrl);
 
-            // Trả về link ảnh local (sau này cần HTTP server hoặc volume share)
-            String imageUrl = "http://10.10.33.99:8082/images/" + Paths.get(imagePath).getFileName().toString();
+            // URL ảnh mà Zalo API có thể truy cập được (qua shared volume)
+            String imageFileName = Paths.get(imagePath).getFileName().toString();
+            String imageUrlForZalo = "http://172.21.0.2:10000/images/" + imageFileName;
+
+            // Gửi ảnh qua Zalo API
+            boolean zaloSent = zaloService.sendImage(phone, imageUrlForZalo, "");
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Fee image generated successfully",
+                "success", zaloSent,
+                "message", zaloSent ? "Fee template sent to Zalo successfully" : "Generated image but failed to send Zalo",
                 "student", studentName,
+                "phone", phone,
                 "transactionId", transactionId,
                 "qrCodeUrl", qrCodeUrl,
                 "imagePath", imagePath,
-                "imageUrl", imageUrl
+                "imageUrl", imageUrlForZalo,
+                "zaloSent", zaloSent
             ));
 
         } catch (Exception e) {
-            log.error("Error in send-image: {}", e.getMessage(), e);
+            log.error("Error in sendFeeTemplate: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
                 "message", "Failed: " + e.getMessage()
