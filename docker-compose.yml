@@ -12,7 +12,7 @@ services:
       - fee-db:/app/data/db       # H2 database
     environment:
       - FEE_EXCEL_PATH=/app/data/fee.xlsx
-      - ZALO_API_URL=https://zalo.edu.eric.pro.vn
+      - ZALO_API_URL=http://172.21.0.2:10000
       - DEFAULT_BANK_ID=970407
       - API_SECRET_KEY=${API_SECRET_KEY}
       # - FEE_CRON=0 0 8 1 * ?      # 8h sáng ngày 1 hàng tháng
