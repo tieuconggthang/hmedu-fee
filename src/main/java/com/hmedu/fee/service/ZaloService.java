@@ -88,6 +88,64 @@ public class ZaloService {
     }
     
     /**
+     * Gửi ảnh dạng base64 qua Zalo API
+     */
+    public boolean sendImageBase64(String phone, String imageBase64, String caption) {
+        int maxRetries = 3;
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                log.info("[Attempt {}/{}] Sending base64 image to phone: {}", attempt, maxRetries, phone);
+
+                if (attempt > 1) {
+                    Thread.sleep(2000);
+                }
+
+                String url = config.getApiUrl() + "/send-image-base64";
+
+                Map<String, Object> requestBody = Map.of(
+                    "phone", phone,
+                    "image_base64", imageBase64,
+                    "caption", caption
+                );
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+
+                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+                ResponseEntity<Map> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    entity,
+                    Map.class
+                );
+
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    Boolean success = (Boolean) response.getBody().get("success");
+                    if (Boolean.TRUE.equals(success)) {
+                        log.info("Base64 image sent successfully to: {} (attempt {})", phone, attempt);
+                        return true;
+                    } else {
+                        String error = (String) response.getBody().get("message");
+                        log.warn("Attempt {} failed: {}", attempt, error);
+                        if (attempt == maxRetries) {
+                            log.error("Failed after {} attempts: {}", maxRetries, error);
+                            return false;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Attempt {} error: {}", attempt, e.getMessage());
+                if (attempt == maxRetries) {
+                    log.error("Error after {} attempts", maxRetries, e);
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Gửi ảnh kèm caption qua Zalo API - Dùng RestTemplate thay vì WebClient
      */
     public boolean sendImage(String phone, String imageUrl, String caption) {

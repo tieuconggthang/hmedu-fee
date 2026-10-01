@@ -4,6 +4,7 @@ import com.hmedu.fee.dto.StudentFeeDto;
 import com.hmedu.fee.service.FeeCollectionService;
 import com.hmedu.fee.service.FeeImageGeneratorService;
 import com.hmedu.fee.service.VietQRService;
+import com.hmedu.fee.service.ZaloService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +27,7 @@ public class FeeController {
     private final FeeCollectionService feeCollectionService;
     private final FeeImageGeneratorService imageGeneratorService;
     private final VietQRService vietQRService;
+    private final ZaloService zaloService;
 
     @Value("${api.secret-key:}")
     private String secretKey;
@@ -232,12 +234,11 @@ public class FeeController {
             // Tạo ảnh template
             String imagePath = imageGeneratorService.generateFeeImage(request, qrCodeUrl);
 
-            // URL ảnh mà Zalo API có thể truy cập được (qua shared volume)
-            String imageFileName = Paths.get(imagePath).getFileName().toString();
-            String imageUrlForZalo = "http://172.21.0.2:10000/images/" + imageFileName;
+            // Đọc ảnh và encode base64
+            String imageBase64 = imageGeneratorService.encodeImageToBase64(imagePath);
 
-            // Gửi ảnh qua Zalo API
-            boolean zaloSent = zaloService.sendImage(phone, imageUrlForZalo, "");
+            // Gửi ảnh qua Zalo API dạng base64
+            boolean zaloSent = zaloService.sendImageBase64(phone, imageBase64, "");
 
             return ResponseEntity.ok(Map.of(
                 "success", zaloSent,

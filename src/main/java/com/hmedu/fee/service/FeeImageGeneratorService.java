@@ -11,6 +11,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.Base64;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -347,5 +348,13 @@ public class FeeImageGeneratorService {
         if (amount == null) return "-";
         NumberFormat formatter = NumberFormat.getInstance(new Locale("vi", "VN"));
         return formatter.format(amount.longValue());
+    }
+
+    /**
+     * Đọc file ảnh và encode sang base64 (không cần shared volume với Zalo API)
+     */
+    public String encodeImageToBase64(String imagePath) throws IOException {
+        byte[] imageBytes = Files.readAllBytes(Path.of(imagePath));
+        return Base64.getEncoder().encodeToString(imageBytes);
     }
 }
