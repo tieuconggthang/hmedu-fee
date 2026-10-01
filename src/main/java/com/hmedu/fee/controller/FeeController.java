@@ -2,12 +2,16 @@ package com.hmedu.fee.controller;
 
 import com.hmedu.fee.dto.StudentFeeDto;
 import com.hmedu.fee.service.FeeCollectionService;
+import com.hmedu.fee.service.FeeImageGeneratorService;
+import com.hmedu.fee.service.VietQRService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -20,6 +24,8 @@ import java.util.UUID;
 public class FeeController {
 
     private final FeeCollectionService feeCollectionService;
+    private final FeeImageGeneratorService imageGeneratorService;
+    private final VietQRService vietQRService;
 
     @Value("${api.secret-key:}")
     private String secretKey;
@@ -176,5 +182,83 @@ public class FeeController {
                 "rawBody", body
             ));
         }
+    }
+
+    /**
+     * API gửi thông báo học phí dạng ảnh/template kèm QR qua Zalo
+     */
+    @PostMapping("/send-image")
+    public ResponseEntity<Map<String, Object>> sendFeeImage(
+            @RequestHeader(value = "X-API-Key", required = false) String apiKey,
+            @RequestBody Map<String, Object> request) {
+
+        try {
+            validateApiKey(apiKey);
+        } catch (SecurityException e) {
+            log.warn("Unauthorized access to /send-image: invalid API key");
+            return ResponseEntity.status(401).body(Map.of(
+                "success", false,
+                "message", "Unauthorized: " + e.getMessage()
+            ));
+        }
+
+        log.info("API /api/fee/send-image called: {}", request);
+
+        try {
+            // Lấy thông tin
+            String studentName = getString(request, "studentName");
+            String phone = getString(request, "phone");
+            BigDecimal amount = new BigDecimal(getString(request, "amount"));
+            String accountNumber = getString(request, "accountNumber");
+            String bankId = getString(request, "bankId");
+            String bank = getString(request, "bank");
+            String accountName = getString(request, "accountName");
+
+            // Tạo transactionId
+            String transactionId = getString(request, "transactionId");
+            if (transactionId == null || transactionId.isEmpty()) {
+                String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
+                transactionId = ts + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+            }
+
+            // Build nội dung chuyển khoản
+            String transferContent = studentName + " " + phone + " MTC" + transactionId;
+
+            // Tạo VietQR URL
+            String qrCodeUrl = vietQRService.generateDynamicQRUrl(
+                bankId, accountNumber, accountName, amount, transferContent
+            );
+
+            // Tạo ảnh template
+            String imagePath = imageGeneratorService.generateFeeImage(request, qrCodeUrl);
+
+            // Trả về link ảnh local (sau này cần HTTP server hoặc volume share)
+            String imageUrl = "http://10.10.33.99:8082/images/" + Paths.get(imagePath).getFileName().toString();
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Fee image generated successfully",
+                "student", studentName,
+                "transactionId", transactionId,
+                "qrCodeUrl", qrCodeUrl,
+                "imagePath", imagePath,
+                "imageUrl", imageUrl
+            ));
+
+        } catch (Exception e) {
+            log.error("Error in send-image: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "Failed: " + e.getMessage()
+            ));
+        }
+    }
+
+    private String getString(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value == null) {
+            throw new IllegalArgumentException("Missing required field: " + key);
+        }
+        return value.toString();
     }
 }
